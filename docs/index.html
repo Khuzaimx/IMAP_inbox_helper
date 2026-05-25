@@ -201,8 +201,12 @@
             <section id="panel-oauth" class="doc-panel">
                 <h1>Google OAuth2 Credentials Setup</h1>
                 <p>For high-security setups without typing passwords, InboxHelper integrates standard Google OAuth2 client synchronization. This uses secure token exchanges and stores your refresh tokens locally in SQLite.</p>
+
+                <div class="alert tip">
+                    <strong>Zero-Configuration Onboarding:</strong> InboxHelper comes pre-configured with secure, built-in global credentials out of the box! You can sign in with Google instantly. If you prefer absolute control over your key paths, simply check the **"Use custom developer API keys"** box on the login screen to supply your own developer keys.
+                </div>
                 
-                <p>Because InboxHelper is a free, 100% local open-source project without a central cloud backend, **you act as your own developer** by creating a free project in Google Cloud Console. This ensures your credentials and keys remain completely private and under your control.</p>
+                <p>If you choose to use custom credentials, **you act as your own developer** by creating a free project in the Google Cloud Console. This ensures your credentials and keys remain completely private and under your control.</p>
 
                 <h2>Google Cloud Console Step-by-Step Guide</h2>
                 
@@ -429,6 +433,10 @@ C:\Users\<YourUsername>\AppData\Local\InboxHelper\inbox_helper.db
 
 # Settings file containing host records and secure parameters:
 C:\Users\<YourUsername>\AppData\Local\InboxHelper\.env</code></pre>
+
+                <h2>Edge WebView2 Thread-Safe UI Execution</h2>
+                <p>Many traditional local web-wrappers suffer from graphic-thread deadlocks when asynchronous web loops (like real-time IMAP polling) invoke synchronous browser commands (such as <code>window.alert()</code>).</p>
+                <p>InboxHelper completely eliminates these issues by replacing native blocking browser dialogs with a custom, non-blocking monochromatic alert overlay. This ensures absolute stability, smooth scaling transitions, and a 100% thread-safe desktop user experience.</p>
             </section>
 
         </main>
