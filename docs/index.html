@@ -277,39 +277,59 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr class="negative-score">
-                                <td>Header Flags</td>
-                                <td>Has <code>List-Unsubscribe</code> or <code>List-ID</code> header (Automated newsletters)</td>
-                                <td>-30 points</td>
+                            <tr class="positive-score">
+                                <td>Thread Check</td>
+                                <td>Ongoing conversation thread detected (replies starting with <code>Re:</code> or <code>Fwd:</code> with matching history)</td>
+                                <td>+35 points</td>
                             </tr>
                             <tr class="negative-score">
                                 <td>Header Flags</td>
-                                <td>Has <code>Precedence: bulk/list/junk</code> or <code>X-Mailer</code> flags</td>
-                                <td>-15 points</td>
+                                <td>Has <code>List-Unsubscribe</code> header flag (Automated newsletters)</td>
+                                <td>-40 points</td>
+                            </tr>
+                            <tr class="negative-score">
+                                <td>Header Flags</td>
+                                <td>Has <code>Precedence: bulk/list/junk</code> or <code>Auto-Submitted</code> flags</td>
+                                <td>-20 points</td>
                             </tr>
                             <tr class="negative-score">
                                 <td>Address Check</td>
-                                <td>Sender address contains bulk terms (e.g. <code>newsletter</code>, <code>noreply</code>, <code>marketing</code>)</td>
-                                <td>-25 points</td>
+                                <td>Sender address contains automated bot keywords (e.g. <code>no-reply</code>, <code>newsletter</code>)</td>
+                                <td>-20 points</td>
+                            </tr>
+                            <tr class="negative-score">
+                                <td>Recipients</td>
+                                <td>Mailing list / bulk distribution check (more than 10 recipients in <code>To</code> or <code>Cc</code>)</td>
+                                <td>-20 points</td>
                             </tr>
                             <tr class="negative-score">
                                 <td>Custom Rules</td>
-                                <td>Sender domain matches user-defined Blacklisted Domains</td>
+                                <td>Sender domain matches user-defined Blacklisted Senders list</td>
                                 <td>-50 points</td>
                             </tr>
                             <tr class="positive-score">
                                 <td>Custom Rules</td>
-                                <td>Sender address/domain matches user-defined Whitelisted Domains</td>
+                                <td>Sender address/domain matches user-defined Whitelisted Senders list</td>
                                 <td>+50 points</td>
                             </tr>
                             <tr class="positive-score">
+                                <td>Domain Check</td>
+                                <td>Internal domain communication (e.g. colleague within the same corporate email domain)</td>
+                                <td>+25 points</td>
+                            </tr>
+                            <tr class="positive-score">
+                                <td>Domain Check</td>
+                                <td>Sender is from a personal email provider domain (e.g. <code>gmail.com</code>)</td>
+                                <td>+15 points</td>
+                            </tr>
+                            <tr class="positive-score">
                                 <td>Keywords</td>
-                                <td>Subject contains direct transaction terms (e.g. <code>invoice</code>, <code>receipt</code>, <code>payment</code>)</td>
+                                <td>Subject contains transaction terms (e.g. <code>invoice</code>, <code>receipt</code>, <code>payment</code>)</td>
                                 <td>+25 points</td>
                             </tr>
                             <tr class="positive-score">
                                 <td>Keywords</td>
-                                <td>Subject/body contains time-critical terms (e.g. <code>urgent</code>, <code>schedule</code>, <code>interview</code>, <code>proposal</code>)</td>
+                                <td>Subject/body contains high-priority terms (e.g. <code>urgent</code>, <code>schedule</code>, <code>interview</code>, <code>proposal</code>)</td>
                                 <td>+15 points</td>
                             </tr>
                         </tbody>

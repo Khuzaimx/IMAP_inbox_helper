@@ -68,8 +68,17 @@ def analyze_email(headers: dict, body: str) -> dict:
             }
             
     # -------------------------------------------------------------
-    # Tier 2: Structural Header Analysis
+    # Tier 2: Structural Header & Thread Analysis
     # -------------------------------------------------------------
+    # Check if this is a reply or forward to an ongoing thread
+    clean_subj = subject.strip()
+    if re.match(r'^(re|fwd|fw|aw|vs):\s*', clean_subj, re.IGNORECASE):
+        core_subject = re.sub(r'^(re|fwd|fw|aw|vs):\s*', '', clean_subj, flags=re.IGNORECASE).strip()
+        import db
+        if db.has_matching_thread(core_subject):
+            score += 35
+            reasons.append("Ongoing conversation thread detected (+35)")
+
     # List-Unsubscribe Header check (Newsletter / Automated feed signature)
     if "list-unsubscribe" in headers:
         score -= 40
@@ -88,8 +97,15 @@ def analyze_email(headers: dict, body: str) -> dict:
         reasons.append(f"Auto-Submitted header detected: '{auto_submitted}' (-20)")
 
     # -------------------------------------------------------------
-    # Tier 3: Sender Profiling
+    # Tier 3: Sender & Recipient Profiling
     # -------------------------------------------------------------
+    # Bulk Recipient check (penalize if more than 10 recipients in To or Cc)
+    cc_field = headers.get("cc", "").strip().lower()
+    recipients = [r.strip() for r in (to_field + "," + cc_field).split(",") if r.strip()]
+    if len(recipients) > 10:
+        score -= 20
+        reasons.append(f"Mailing list / bulk recipient list ({len(recipients)} recipients) (-20)")
+
     # Check if sender address contains automated/bot keywords
     if AUTO_SENDER_REGEX.search(sender):
         score -= 20
@@ -102,6 +118,19 @@ def analyze_email(headers: dict, body: str) -> dict:
             if domain in PERSONAL_DOMAINS:
                 score += 15
                 reasons.append("Sender is from a personal email domain (+15)")
+                
+        # Check for internal domain communication (e.g. colleague within same corporate domain)
+        if Config.IMAP_USER and "@" in Config.IMAP_USER:
+            user_domain = Config.IMAP_USER.split("@", 1)[1].lower()
+            sender_domain = ""
+            domain_match = re.search(r"@([\w\.-]+)", sender)
+            if domain_match:
+                sender_domain = domain_match.group(1).lower()
+                
+            if user_domain and sender_domain and user_domain == sender_domain:
+                if user_domain not in PERSONAL_DOMAINS:
+                    score += 25
+                    reasons.append(f"Internal domain communication (@{user_domain}) (+25)")
                 
     # Direct mention analysis (is it sent explicitly to the user's mailbox?)
     if Config.IMAP_USER and Config.IMAP_USER.lower() in to_field:

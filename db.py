@@ -200,6 +200,31 @@ def update_read_status(message_id: str, is_read: bool):
     finally:
         conn.close()
 
+def has_matching_thread(core_subject: str) -> bool:
+    """
+    Checks if there is already an existing email in the local database that has the 
+    same core subject (after cleaning out Re: / Fwd: prefixes).
+    This helps the classifier detect ongoing conversations.
+    """
+    if not core_subject or len(core_subject.strip()) < 3:
+        return False
+        
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        # Search for subject containing the core thread subject
+        cursor.execute(
+            "SELECT 1 FROM emails WHERE subject LIKE ? OR ? LIKE '%' || subject || '%' LIMIT 1",
+            (f"%{core_subject}%", core_subject)
+        )
+        row = cursor.fetchone()
+        return row is not None
+    except Exception as e:
+        print(f"Failed to check thread match for '{core_subject}': {e}")
+        return False
+    finally:
+        conn.close()
+
 def clear_all_data():
     """Wipes the database tables clean."""
     conn = get_connection()
