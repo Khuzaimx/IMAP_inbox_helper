@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InboxHelper Documentation Hub</title>
+    <!-- Custom Page Icon -->
+    <link rel="icon" type="image/png" href="icon.png">
+    <!-- Google Fonts: Plus Jakarta Sans for UI, Inter for Prose, JetBrains Mono for Code -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <!-- Header Navigation -->
+    <header class="doc-header">
+        <div class="header-left">
+            <img src="icon.png" alt="InboxHelper Logo" class="header-logo">
+            <span class="header-title">InboxHelper</span>
+            <span class="version-badge">v1.0.0</span>
+        </div>
+        <div class="header-right">
+            <a href="https://github.com/Khuzaimx/IMAP_inbox_helper" target="_blank" class="github-link">
+                <svg viewBox="0 0 24 24" class="github-icon"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                GitHub Repository
+            </a>
+        </div>
+    </header>
+
+    <!-- Main Docs Layout -->
+    <div class="doc-container">
+        
+        <!-- Left Sidebar Navigation -->
+        <aside class="doc-sidebar">
+            <nav class="sidebar-nav">
+                
+                <div class="nav-group">
+                    <div class="nav-group-title">Getting Started</div>
+                    <ul class="nav-list">
+                        <li><a href="#intro" class="nav-link active" data-target="intro">Introduction</a></li>
+                        <li><a href="#install" class="nav-link" data-target="install">Setup Wizard Installation</a></li>
+                        <li><a href="#downloads" class="nav-link" data-target="downloads">Downloads & Releases</a></li>
+                    </ul>
+                </div>
+
+                <div class="nav-group">
+                    <div class="nav-group-title">Configuration</div>
+                    <ul class="nav-list">
+                        <li><a href="#passwords" class="nav-link" data-target="passwords">Standard App Passwords</a></li>
+                        <li><a href="#oauth" class="nav-link" data-target="oauth">Google OAuth2 Client</a></li>
+                    </ul>
+                </div>
+
+                <div class="nav-group">
+                    <div class="nav-group-title">Routing & Rules</div>
+                    <ul class="nav-list">
+                        <li><a href="#logic" class="nav-link" data-target="logic">Scoring Logic Heuristics</a></li>
+                        <li><a href="#sandbox" class="nav-link" data-target="sandbox">Interactive Sandbox</a></li>
+                    </ul>
+                </div>
+
+                <div class="nav-group">
+                    <div class="nav-group-title">Architecture</div>
+                    <ul class="nav-list">
+                        <li><a href="#security" class="nav-link" data-target="security">Security & Local Policy</a></li>
+                    </ul>
+                </div>
+
+            </nav>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="doc-content">
+
+            <!-- Introduction Panel -->
+            <section id="panel-intro" class="doc-panel active">
+                <h1>Introduction</h1>
+                <p class="lead">InboxHelper is a lightweight, local-first email filtering desktop application designed to sync, classify, and filter your IMAP mailbox in real time without sending your data to external servers.</p>
+                
+                <p>Modern productivity utilities increasingly rely on remote APIs and cloud-hosted large language models to categorize emails. This introduces significant issues, including high recurring monthly costs, network-induced latencies, and serious privacy concerns when parsing personal or business communication. InboxHelper operates strictly offline, using a local background daemon and a deterministic scoring engine that processes emails directly on your device.</p>
+
+                <div class="feature-metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-value">100%</div>
+                        <div class="metric-label">Local Data Boundary</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">0ms</div>
+                        <div class="metric-label">Cloud Latency</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">~38MB</div>
+                        <div class="metric-label">Memory Footprint</div>
+                    </div>
+                </div>
+
+                <h2>Key Capabilities</h2>
+                <ul>
+                    <li><strong>Offline Data Integrity</strong>: Credentials, folder indices, and sync transaction history are stored inside a local SQLite database file in your Windows AppData directory.</li>
+                    <li><strong>Deterministic Parsing Engine</strong>: Evaluates bulk headers, scans unsubscribe endpoints, profiles domain trust, and scores natural language keywords to filter newsletters and automated clutter from your primary view.</li>
+                    <li><strong>Asynchronous Synchronization</strong>: Utilizes a dedicated, thread-safe Python background worker that coordinates with your mail server, ensuring the UI remains perfectly responsive.</li>
+                    <li><strong>Operating System Autostart</strong>: Includes a standard Windows registry hook to launch silently in the background on system boot, keeping your folders sorted before you open your email client.</li>
+                </ul>
+            </section>
+
+            <!-- Setup Wizard Installation Panel -->
+            <section id="panel-install" class="doc-panel">
+                <h1>Setup Wizard Installation</h1>
+                <p>General users can run InboxHelper without installing a Python environment, configuring virtual environments, or executing console commands. We compile the application into a standalone setup wizard.</p>
+
+                <div class="alert tip">
+                    <strong>Technical Note:</strong> The setup package bundles a sandboxed Python runtime environment and Microsoft Edge WebView2 runtime dependencies inside the program directory. It runs out-of-the-box on standard Windows 10 and 11 installations.
+                </div>
+
+                <h2>Step-by-Step Installation</h2>
+                
+                <div class="step-card">
+                    <div class="step-number">1</div>
+                    <div class="step-details">
+                        <h3>Download the Installer</h3>
+                        <p>Go to the <a href="#downloads" class="inner-nav-link" data-target="downloads">Downloads & Releases</a> panel, and select the latest stable release of <code>InboxHelper_Setup.exe</code>.</p>
+                    </div>
+                </div>
+
+                <div class="step-card">
+                    <div class="step-number">2</div>
+                    <div class="step-details">
+                        <h3>Run the Setup Wizard</h3>
+                        <p>Execute the downloaded installer. The wizard will guide you through:
+                        <ul>
+                            <li>Specifying the installation path (defaults to <code>C:\Program Files\InboxHelper\</code>).</li>
+                            <li>Creating standard Start Menu and Desktop shortcuts.</li>
+                            <li><strong>Windows Startup Run Integration</strong>: Check the box to launch the background sync engine automatically on system boot.</li>
+                        </ul>
+                        </p>
+                    </div>
+                </div>
+
+                <div class="step-card">
+                    <div class="step-number">3</div>
+                    <div class="step-details">
+                        <h3>Connect Your Account</h3>
+                        <p>Launch the application. The onboarding interface will prompt you to configure standard IMAP credentials (such as App Passwords) or authorize a secure Google OAuth2 connection to begin syncing your inbox.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Downloads & Releases Panel (Dynamic) -->
+            <section id="panel-downloads" class="doc-panel">
+                <h1>Downloads & Releases</h1>
+                <p>Below is the complete historical list of compiled binary versions for InboxHelper. All files are fetched directly from our official release tags on GitHub in real-time. Click any release version to download the standalone Windows setup wizard instantly.</p>
+
+                <!-- API Loading State -->
+                <div id="releases-loading" class="loading-indicator">
+                    <div class="spinner"></div>
+                    <p>Loading latest release assets from GitHub API...</p>
+                </div>
+
+                <!-- API Failure / Rate Limit Fallback -->
+                <div id="releases-error" class="alert warning hidden">
+                    <strong>GitHub API Rate Limit / Connection Offline:</strong> We are temporarily unable to fetch dynamic release files. You can still download the stable build directly from the primary link below:
+                    <br><br>
+                    <a href="https://github.com/Khuzaimx/IMAP_inbox_helper/releases" target="_blank" class="download-btn">View GitHub Releases Page</a>
+                </div>
+
+                <!-- Dynamically Populated Releases List -->
+                <div id="releases-container" class="releases-list"></div>
+            </section>
+
+            <!-- Standard App Passwords Panel -->
+            <section id="panel-passwords" class="doc-panel">
+                <h1>Standard IMAP App Passwords</h1>
+                <p>If you prefer a direct IMAP credential connection instead of Google OAuth2, you can connect securely using standard SSL credentials combined with an **App Password**.</p>
+
+                <div class="alert note">
+                    <strong>Security Context:</strong> Primary login passwords are blocked by default by modern mail providers (such as Gmail, Outlook, Yahoo, and iCloud) for security. You must generate an App Password—a unique 16-character code that grants InboxHelper permission to sync mail without accessing your main account password.
+                </div>
+
+                <h2>Configuring Gmail App Passwords</h2>
+                <ol>
+                    <li>Go to your **Google Account Settings** (myaccount.google.com).</li>
+                    <li>Select the **Security** tab from the left sidebar.</li>
+                    <li>Ensure **2-Step Verification** is enabled on your account.</li>
+                    <li>Click on **2-Step Verification**, scroll to the bottom of the settings page, and select **App Passwords**.</li>
+                    <li>Type a descriptive name for the application (e.g. <code>InboxHelper Desktop</code>), and click **Create**.</li>
+                    <li>Copy the generated 16-character app password (spaces can be ignored).</li>
+                    <li>Launch InboxHelper, navigate to the **App Password tab** on the Login Wall, and fill in:
+                        <ul>
+                            <li><strong>IMAP Host</strong>: <code>imap.gmail.com</code></li>
+                            <li><strong>IMAP Port</strong>: <code>993</code></li>
+                            <li><strong>Email Address</strong>: <code>your_email@gmail.com</code></li>
+                            <li><strong>App Password</strong>: Paste the copied 16-character code.</li>
+                        </ul>
+                    </li>
+                </ol>
+            </section>
+
+            <!-- Google OAuth2 Client Panel -->
+            <section id="panel-oauth" class="doc-panel">
+                <h1>Google OAuth2 Credentials Setup</h1>
+                <p>For high-security setups without typing passwords, InboxHelper integrates standard Google OAuth2 client synchronization. This uses secure token exchanges and stores your refresh tokens locally in SQLite.</p>
+                
+                <p>Because InboxHelper is a free, 100% local open-source project without a central cloud backend, **you act as your own developer** by creating a free project in Google Cloud Console. This ensures your credentials and keys remain completely private and under your control.</p>
+
+                <h2>Google Cloud Console Step-by-Step Guide</h2>
+                
+                <div class="step-card">
+                    <div class="step-number">1</div>
+                    <div class="step-details">
+                        <h3>Create a Google Cloud Project</h3>
+                        <p>Navigate to the <a href="https://console.cloud.google.com/" target="_blank">Google Cloud Console</a>. Log in with your Google account, click on the project selector dropdown in the top bar, select **New Project**, name it <code>InboxHelper</code>, and click **Create**.</p>
+                    </div>
+                </div>
+
+                <div class="step-card">
+                    <div class="step-number">2</div>
+                    <div class="step-details">
+                        <h3>Configure the OAuth Consent Screen</h3>
+                        <p>In the left sidebar, navigate to **APIs & Services** > **OAuth Consent Screen**:
+                        <ul>
+                            <li>Select User Type: **External** (this allows you to link your personal Gmail).</li>
+                            <li>Fill in the mandatory fields: App name (<code>InboxHelper</code>) and your Support Email.</li>
+                            <li>Skip the scopes configuration panel.</li>
+                            <li><strong>Add Test Users (Crucial!)</strong>: Add your personal Gmail address to the Test Users list. Since your Google Cloud project is in "Testing" mode, Google will block any logins that are not explicitly listed in this Test Users list.</li>
+                        </ul>
+                        </p>
+                    </div>
+                </div>
+
+                <div class="step-card">
+                    <div class="step-number">3</div>
+                    <div class="step-details">
+                        <h3>Create OAuth Credentials</h3>
+                        <p>Navigate to the **Credentials** tab on the left sidebar:
+                        <ul>
+                            <li>Click **Create Credentials** > **OAuth Client ID**.</li>
+                            <li>Select Application Type: **Web Application** (this enables us to host a local secure callback server).</li>
+                            <li>Name: <code>InboxHelper Web Flow</code>.</li>
+                            <li><strong>Authorized Redirect URIs</strong>: Add exactly: <code>http://localhost:8080/</code>.</li>
+                            <li>Click **Create**, and copy the **Client ID** and **Client Secret** shown in the popup.</li>
+                        </ul>
+                        </p>
+                    </div>
+                </div>
+
+                <div class="step-card">
+                    <div class="step-number">4</div>
+                    <div class="step-details">
+                        <h3>Authorize in the App</h3>
+                        <p>Open InboxHelper's onboarding card, select **Google OAuth2**, paste your Client ID and Client Secret, and click **Connect**. A secure Google authentication tab will open in your web browser. Grant permissions, and you are done!</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Scoring Logic Heuristics Panel -->
+            <section id="panel-logic" class="doc-panel">
+                <h1>Scoring Heuristics Engine</h1>
+                <p>InboxHelper's local classification engine performs high-speed mail parsing by reviewing envelope parameters and counting specific structural headers. It runs instantly (averaging 0.05 seconds per email) and outputs an importance score from **0 to 100**.</p>
+
+                <p>Emails scoring at or above your configured **Importance Threshold** are placed in the "Important" dashboard feed; all others are routed to "Clutter/Newsletter".</p>
+
+                <h2>How a Mail Priority is Calculated</h2>
+                
+                <div class="scoring-rules-table-wrapper">
+                    <table class="scoring-rules-table">
+                        <thead>
+                            <tr>
+                                <th>Category</th>
+                                <th>Scoring Condition Triggered</th>
+                                <th>Weight</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="negative-score">
+                                <td>Header Flags</td>
+                                <td>Has <code>List-Unsubscribe</code> or <code>List-ID</code> header (Automated newsletters)</td>
+                                <td>-30 points</td>
+                            </tr>
+                            <tr class="negative-score">
+                                <td>Header Flags</td>
+                                <td>Has <code>Precedence: bulk/list/junk</code> or <code>X-Mailer</code> flags</td>
+                                <td>-15 points</td>
+                            </tr>
+                            <tr class="negative-score">
+                                <td>Address Check</td>
+                                <td>Sender address contains bulk terms (e.g. <code>newsletter</code>, <code>noreply</code>, <code>marketing</code>)</td>
+                                <td>-25 points</td>
+                            </tr>
+                            <tr class="negative-score">
+                                <td>Custom Rules</td>
+                                <td>Sender domain matches user-defined Blacklisted Domains</td>
+                                <td>-50 points</td>
+                            </tr>
+                            <tr class="positive-score">
+                                <td>Custom Rules</td>
+                                <td>Sender address/domain matches user-defined Whitelisted Domains</td>
+                                <td>+50 points</td>
+                            </tr>
+                            <tr class="positive-score">
+                                <td>Keywords</td>
+                                <td>Subject contains direct transaction terms (e.g. <code>invoice</code>, <code>receipt</code>, <code>payment</code>)</td>
+                                <td>+25 points</td>
+                            </tr>
+                            <tr class="positive-score">
+                                <td>Keywords</td>
+                                <td>Subject/body contains time-critical terms (e.g. <code>urgent</code>, <code>schedule</code>, <code>interview</code>, <code>proposal</code>)</td>
+                                <td>+15 points</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="alert note">
+                    <strong>Note:</strong> All scores are bounded between 0 and 100. If an email triggers multiple rules, its score accumulates. For example, a whitelisted newsletter will start with +50 points, keeping it highly visible despite having automated headers!
+                </div>
+            </section>
+
+            <!-- Interactive Sandbox Panel -->
+            <section id="panel-sandbox" class="doc-panel">
+                <h1>Interactive Evaluation Sandbox</h1>
+                <p>Want to preview how the InboxHelper rules engine behaves without launching the desktop application? Use the interactive simulator below to test your rules in real-time, right in your browser!</p>
+
+                <!-- Sandbox Form -->
+                <div class="sandbox-box">
+                    <div class="sandbox-form-grid">
+                        
+                        <div class="sandbox-input-group">
+                            <label for="sb-sender">Sender Address</label>
+                            <input type="text" id="sb-sender" placeholder="support@github.com" value="newsletter@medium.com">
+                        </div>
+
+                        <div class="sandbox-input-group">
+                            <label for="sb-subject">Subject Line</label>
+                            <input type="text" id="sb-subject" placeholder="Urgent: Schedule interview proposal" value="Your Daily Read - Tech and Design Trends">
+                        </div>
+
+                        <div class="sandbox-input-group full-width">
+                            <label for="sb-headers">Email Headers (Check list-unsubscribe simulation)</label>
+                            <div class="checkbox-row">
+                                <label class="checkbox-container">
+                                    <input type="checkbox" id="sb-hdr-unsubscribe" checked>
+                                    <span class="checkbox-label">Simulate <code>List-Unsubscribe</code> header flag</span>
+                                </label>
+                                <label class="checkbox-container">
+                                    <input type="checkbox" id="sb-hdr-bulk">
+                                    <span class="checkbox-label">Simulate <code>Precedence: bulk</code> header flag</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="sandbox-input-group full-width">
+                            <label for="sb-body">Email Body Text</label>
+                            <textarea id="sb-body" rows="4" placeholder="Type email text here...">Hi customer, click here if you wish to unsubscribe from our marketing campaigns.</textarea>
+                        </div>
+
+                        <div class="sandbox-input-group">
+                            <label for="sb-whitelist">User Whitelist (Comma separated domains/emails)</label>
+                            <input type="text" id="sb-whitelist" placeholder="github.com, boss@company.com" value="">
+                        </div>
+
+                        <div class="sandbox-input-group">
+                            <label for="sb-blacklist">User Blacklist (Comma separated domains/keywords)</label>
+                            <input type="text" id="sb-blacklist" placeholder="aliexpress.com, glassdoor" value="glassdoor,indeed,aliexpress,newsletter">
+                        </div>
+
+                        <div class="sandbox-input-group full-width">
+                            <div class="slider-header">
+                                <label for="sb-threshold">Importance Threshold Target</label>
+                                <span id="sb-threshold-val">50</span>
+                            </div>
+                            <input type="range" id="sb-threshold" min="0" max="100" value="50" class="slider-input">
+                        </div>
+
+                    </div>
+
+                    <button id="sb-run-btn" class="sb-evaluate-btn">Evaluate Email Priority</button>
+                </div>
+
+                <!-- Sandbox Evaluation Results -->
+                <div id="sandbox-results" class="sandbox-results hidden">
+                    <div class="results-header">
+                        <div class="results-metrics">
+                            <div class="result-score-ring">
+                                <span id="res-score">0</span>
+                                <span class="max-score">/100</span>
+                            </div>
+                            <div class="result-status-block">
+                                <span class="label">Priority Routing Result:</span>
+                                <span id="res-status" class="status-badge clutter">Clutter</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h3>Score Calibration Breakdown</h3>
+                    <ul id="res-breakdown" class="breakdown-list"></ul>
+                </div>
+            </section>
+
+            <!-- Security & Local Policy Panel -->
+            <section id="panel-security" class="doc-panel">
+                <h1>Security & Local Data Policy</h1>
+                <p>InboxHelper is engineered to provide absolute security by maintaining strict data boundary control. All operations occur on your physical local machine.</p>
+
+                <h2>Our 100% Offline Commitment</h2>
+                
+                <div class="feature-metrics-grid">
+                    <div class="metric-card security-focus">
+                        <div class="metric-label">Local-Only Cache</div>
+                        <p class="desc">Your email bodies, text snippets, and metadata are indexed in a local SQLite file in your <code>AppData/Local</code> folder. It is never transmitted anywhere.</p>
+                    </div>
+                    <div class="metric-card security-focus">
+                        <div class="metric-label">Token Safety</div>
+                        <p class="desc">All OAuth2 refresh tokens and app passwords are stored strictly inside your local database. They are never sent to external servers or logged in shared cloud locations.</p>
+                    </div>
+                    <div class="metric-card security-focus">
+                        <div class="metric-label">Zero Telemetry</div>
+                        <p class="desc">InboxHelper has no analytics tracking, no crash reporter telemetries, and no phone-home checkers. The application is completely private.</p>
+                    </div>
+                </div>
+
+                <h2>Database Location on Windows</h2>
+                <p>You can audit or delete your SQLite database and credentials configuration files at any time. They are stored inside your system user directories:</p>
+                
+                <div class="code-block-header">Local Windows Directories</div>
+                <pre><code># Main database storing cached sync records:
+C:\Users\<YourUsername>\AppData\Local\InboxHelper\inbox_helper.db
+
+# Settings file containing host records and secure parameters:
+C:\Users\<YourUsername>\AppData\Local\InboxHelper\.env</code></pre>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Script Import -->
+    <script src="js/app.js"></script>
+</body>
+</html>
