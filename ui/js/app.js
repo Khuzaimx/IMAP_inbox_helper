@@ -99,7 +99,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!window.pywebview || !window.pywebview.api) return;
 
         if (renderLoading && emailFeedList.children.length <= 1) {
-            emailFeedList.innerHTML = `<div class="empty-state"><span>⏳</span><p>Synchronizing local email history...</p></div>`;
+            emailFeedList.innerHTML = `<div class="empty-state"><p>Synchronizing local email history...</p></div>`;
         }
 
         window.pywebview.api.get_emails(onlyImportant).then(response => {
@@ -119,7 +119,6 @@ document.addEventListener("DOMContentLoaded", () => {
         if (emails.length === 0) {
             emailFeedList.innerHTML = `
                 <div class="empty-state">
-                    <span>🔍</span>
                     <p>No emails found. Click <strong>Sync Now</strong> to check your IMAP server.</p>
                 </div>`;
             return;
@@ -138,7 +137,7 @@ document.addEventListener("DOMContentLoaded", () => {
             card.setAttribute("data-id", email.message_id);
             
             const scoreClass = email.is_important ? "score-high" : "score-low";
-            const scoreTag = email.is_important ? "⭐ Important" : "Bulk";
+            const scoreTag = email.is_important ? "Important" : "Bulk";
             const scoreStr = `${email.importance_score} | ${scoreTag}`;
             
             // Format sender display name cleanly
@@ -198,7 +197,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function renderEmailDetail(email) {
         const scoreClass = email.is_important ? "score-high" : "score-low";
-        const scoreBadge = email.is_important ? "⭐ IMPORTANT" : "BULK / CLUTTER";
+        const scoreBadge = email.is_important ? "IMPORTANT" : "BULK / CLUTTER";
         
         // Split reasons
         const reasons = email.classification_reason ? email.classification_reason.split("; ") : [];
@@ -236,9 +235,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 <div class="detail-body-container">${escapeHtml(email.body_snippet || "Content is empty.")}</div>
 
                 <div class="detail-actions">
-                    <button class="btn btn-secondary" id="action-read-btn">👁️ Mark as Read</button>
-                    <button class="btn btn-secondary" id="action-archive-btn">📁 Move to Archive</button>
-                    <button class="btn btn-danger" id="action-delete-btn">🗑️ Delete Mail</button>
+                    <button class="btn btn-secondary" id="action-read-btn">Mark as Read</button>
+                    <button class="btn btn-secondary" id="action-archive-btn">Move to Archive</button>
+                    <button class="btn btn-danger" id="action-delete-btn">Delete Mail</button>
                 </div>
             </div>
         `;
@@ -260,7 +259,7 @@ document.addEventListener("DOMContentLoaded", () => {
         
         const activeBtn = buttonMap[action];
         const originalText = activeBtn.innerText;
-        activeBtn.innerText = "⏳ Processing...";
+        activeBtn.innerText = "Processing...";
         activeBtn.disabled = true;
 
         window.pywebview.api.perform_action(messageId, action).then(response => {
@@ -269,7 +268,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 selectedEmailId = null;
                 emailDetailPane.innerHTML = `
                     <div class="empty-state">
-                        <span>✅</span>
                         <p>Mail processed successfully. Selecting another email...</p>
                     </div>`;
                 loadEmails(onlyImportantFilter);
@@ -304,13 +302,13 @@ document.addEventListener("DOMContentLoaded", () => {
     manualSyncBtn.addEventListener("click", () => {
         if (!window.pywebview || !window.pywebview.api) return;
         
-        manualSyncBtn.innerText = "⏳ Syncing...";
+        manualSyncBtn.innerText = "Syncing...";
         manualSyncBtn.disabled = true;
         
         window.pywebview.api.trigger_manual_sync().then(response => {
             const res = JSON.parse(response);
             setTimeout(() => {
-                manualSyncBtn.innerText = "🔄 Sync Now";
+                manualSyncBtn.innerText = "Sync Now";
                 manualSyncBtn.disabled = false;
                 loadEmails(onlyImportantFilter);
                 loadLogs();
@@ -445,7 +443,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function renderSandboxResult(result) {
         const ratingClass = result.is_important ? "score-high" : "score-low";
-        const ratingTag = result.is_important ? "⭐ IMPORTANT" : "BULK / CLUTTER";
+        const ratingTag = result.is_important ? "IMPORTANT" : "BULK / CLUTTER";
         
         // Parse matches
         const reasons = result.classification_reason ? result.classification_reason.split("; ") : [];
@@ -500,7 +498,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     clearDbBtn.addEventListener("click", () => {
-        if (confirm("⚠️ WARNING: This will delete all indexed emails and system log history from SQLite permanently! Are you absolutely sure?")) {
+        if (confirm("WARNING: This will delete all indexed emails and system log history from SQLite permanently! Are you absolutely sure?")) {
             if (!window.pywebview || !window.pywebview.api) return;
             
             window.pywebview.api.clear_database().then(response => {
@@ -508,7 +506,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (res.success) {
                     alert("Database tables wiped successfully.");
                     selectedEmailId = null;
-                    emailDetailPane.innerHTML = `<div class="empty-state"><span>📖</span><p>Select an email from the left feed.</p></div>`;
+                    emailDetailPane.innerHTML = `<div class="empty-state"><p>Select an email from the left feed.</p></div>`;
                     loadEmails(onlyImportantFilter);
                     loadLogs();
                 }

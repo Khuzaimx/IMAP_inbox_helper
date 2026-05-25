@@ -16,7 +16,6 @@
         <!-- Sidebar Navigation -->
         <aside class="sidebar">
             <div class="brand">
-                <div class="brand-logo">📧</div>
                 <div class="brand-text">
                     <h1>InboxHelper</h1>
                     <span>Local Router Daemon</span>
@@ -25,16 +24,16 @@
             
             <nav class="nav-menu">
                 <button class="nav-btn active" data-tab="dashboard-tab">
-                    <span class="nav-icon">📊</span> Dashboard
+                    Dashboard
                 </button>
                 <button class="nav-btn" data-tab="rules-tab">
-                    <span class="nav-icon">⚙️</span> Rules & Configs
+                    Rules & Configs
                 </button>
                 <button class="nav-btn" data-tab="sandbox-tab">
-                    <span class="nav-icon">🧪</span> Classifier Sandbox
+                    Classifier Sandbox
                 </button>
                 <button class="nav-btn" data-tab="logs-tab">
-                    <span class="nav-icon">💻</span> System Console
+                    System Console
                 </button>
             </nav>
 
@@ -48,7 +47,7 @@
                     <span class="metric-value">~38 MB</span>
                 </div>
                 <button class="sync-btn" id="manual-sync-btn">
-                    🔄 Sync Now
+                    Sync Now
                 </button>
             </div>
         </aside>
@@ -65,27 +64,24 @@
                     </div>
                     <div class="feed-filters">
                         <button class="filter-btn active" id="filter-all-btn">All Synced</button>
-                        <button class="filter-btn" id="filter-important-btn">⭐ Important Only</button>
+                        <button class="filter-btn" id="filter-important-btn">Important Only</button>
                     </div>
                 </header>
 
                 <div class="metrics-grid">
                     <div class="metric-card glass">
-                        <div class="card-icon emerald-glow">⭐</div>
                         <div class="card-data">
                             <span class="card-label">Important Mails</span>
                             <h3 id="important-count">0</h3>
                         </div>
                     </div>
                     <div class="metric-card glass">
-                        <div class="card-icon blue-glow">📁</div>
                         <div class="card-data">
                             <span class="card-label">Promos & Feeds</span>
                             <h3 id="clutter-count">0</h3>
                         </div>
                     </div>
                     <div class="metric-card glass">
-                        <div class="card-icon indigo-glow">📨</div>
                         <div class="card-data">
                             <span class="card-label">Total Sync Log</span>
                             <h3 id="total-count">0</h3>
@@ -98,7 +94,6 @@
                     <div class="feed-container glass">
                         <div class="feed-list" id="email-feed-list">
                             <div class="empty-state">
-                                <span>🔍</span>
                                 <p>No emails synchronized yet. Click <strong>Sync Now</strong> or check credentials.</p>
                             </div>
                         </div>
@@ -107,7 +102,6 @@
                     <!-- Detail Pane -->
                     <div class="detail-container glass" id="email-detail-pane">
                         <div class="empty-state">
-                            <span>📖</span>
                             <p>Select an email from the left feed to view classification analytics and content snippet.</p>
                         </div>
                     </div>
@@ -232,7 +226,6 @@
 
                     <div class="sandbox-outputs glass" id="sandbox-result-pane">
                         <div class="empty-state">
-                            <span>🧪</span>
                             <p>Enter email details and click <strong>Run Sandbox Evaluation</strong> to see rule weights in action.</p>
                         </div>
                     </div>
@@ -247,14 +240,14 @@
                             <h2>Local System Console</h2>
                             <p>Real-time execution logs from the background IMAP worker and routing engine</p>
                         </div>
-                        <button class="btn btn-danger" id="clear-db-btn">🗑️ Wipe Indexed Logs & Emails</button>
+                        <button class="btn btn-danger" id="clear-db-btn">Wipe Indexed Logs & Emails</button>
                     </div>
                 </header>
 
                 <div class="console-box glass">
                     <div class="console-header">
                         <span class="console-title">developer@imap-helper:~$ tail -n 150 syslog</span>
-                        <button class="console-refresh" id="refresh-logs-btn">🔄 Refresh Logs</button>
+                        <button class="console-refresh" id="refresh-logs-btn">Refresh Logs</button>
                     </div>
                     <div class="console-body" id="console-logs-list">
                         <!-- Log messages are rendered here -->
