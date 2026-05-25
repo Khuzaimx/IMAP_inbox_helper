@@ -5,6 +5,26 @@
 document.addEventListener("DOMContentLoaded", () => {
 
     // ==========================================================================
+    // 0. Mobile Hamburger Menu Toggle
+    // ==========================================================================
+    const menuToggle = document.getElementById("menu-toggle-btn");
+    const docSidebar = document.querySelector(".doc-sidebar");
+    
+    if (menuToggle && docSidebar) {
+        menuToggle.addEventListener("click", (e) => {
+            e.stopPropagation();
+            docSidebar.classList.toggle("open");
+        });
+        
+        // Close sidebar when clicking outside on mobile
+        document.addEventListener("click", (e) => {
+            if (window.innerWidth <= 900 && !docSidebar.contains(e.target) && e.target !== menuToggle && !menuToggle.contains(e.target)) {
+                docSidebar.classList.remove("open");
+            }
+        });
+    }
+
+    // ==========================================================================
     // 1. Single Page Application (SPA) Panel Swapping
     // ==========================================================================
     const navLinks = document.querySelectorAll(".nav-link");
@@ -24,6 +44,11 @@ document.addEventListener("DOMContentLoaded", () => {
             const activeLink = document.querySelector(`.nav-link[data-target="${targetId}"]`);
             if (activeLink) {
                 activeLink.classList.add("active");
+            }
+
+            // Close sidebar on mobile
+            if (window.innerWidth <= 900 && docSidebar) {
+                docSidebar.classList.remove("open");
             }
 
             // Scroll content view smoothly to top
