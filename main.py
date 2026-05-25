@@ -8,6 +8,15 @@ import db
 from imap_client import IMAPInboxManager
 from gui_bridge import GUIBridge
 
+# Set explicit AppUserModelID on Windows so the OS groups our taskbar process separately
+if os.name == 'nt':
+    try:
+        import ctypes
+        myappid = 'khuzaimx.imapinboxhelper.router.1.0'
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+    except Exception:
+        pass
+
 # Global shared application state
 app_state = {
     "running": True,
