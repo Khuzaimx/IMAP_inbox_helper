@@ -887,4 +887,9 @@ document.addEventListener("DOMContentLoaded", () => {
             .replace(/"/g, "&quot;")
             .replace(/'/g, "&#039;");
     }
+
+    // Disable right-click context menu to prevent inspecting elements/dev tools in production
+    document.addEventListener("contextmenu", (e) => {
+        e.preventDefault();
+    });
 });

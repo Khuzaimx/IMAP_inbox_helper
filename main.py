@@ -115,7 +115,7 @@ def main():
     
     # Start the GUI shell
     # On Windows, this runs the native Edge WebView2 loop
-    webview.start(debug=True)
+    webview.start(debug=False)
 
 if __name__ == "__main__":
     main()
