@@ -1,8 +1,12 @@
 import os
 from dotenv import load_dotenv
+# Path settings configuration file safely inside the writeable user AppData directory
+APP_DATA_DIR = os.path.join(os.environ.get("LOCALAPPDATA", os.path.expanduser("~")), "InboxHelper")
+os.makedirs(APP_DATA_DIR, exist_ok=True)
+ENV_PATH = os.path.join(APP_DATA_DIR, ".env")
 
-# Load variables from .env file
-load_dotenv()
+# Load variables from writeable AppData .env file
+load_dotenv(ENV_PATH)
 
 class Config:
     # IMAP Configuration
@@ -34,8 +38,8 @@ class Config:
 
     @classmethod
     def save_to_env_file(cls, updates: dict):
-        """Helper function to update settings inside the local .env file."""
-        env_path = ".env"
+        """Helper function to update settings inside the local AppData .env file."""
+        env_path = ENV_PATH
         current_env = {}
         
         # Read existing variables
@@ -57,7 +61,7 @@ class Config:
                 f.write(f"{key}={val}\n")
 
         # Reload updated environment variables
-        load_dotenv(override=True)
+        load_dotenv(ENV_PATH, override=True)
         # Refresh current config fields
         cls.IMAP_HOST = os.getenv("IMAP_HOST", cls.IMAP_HOST)
         cls.IMAP_PORT = int(os.getenv("IMAP_PORT", cls.IMAP_PORT))
