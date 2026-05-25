@@ -23,6 +23,10 @@ class Config:
     # Scoring Engine
     IMPORTANCE_THRESHOLD = int(os.getenv("IMPORTANCE_THRESHOLD", 50))
 
+    # Google OAuth2 Defaults (Can be loaded from environment or hardcoded by maintainer)
+    GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
+    GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "")
+
     # Custom Rules (Parsed into Lists)
     WHITELIST_SENDERS = [
         email.strip().lower()
@@ -71,6 +75,8 @@ class Config:
         cls.MONITOR_FOLDER = os.getenv("MONITOR_FOLDER", cls.MONITOR_FOLDER)
         cls.POLL_INTERVAL = int(os.getenv("POLL_INTERVAL", cls.POLL_INTERVAL))
         cls.IMPORTANCE_THRESHOLD = int(os.getenv("IMPORTANCE_THRESHOLD", cls.IMPORTANCE_THRESHOLD))
+        cls.GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", cls.GOOGLE_CLIENT_ID)
+        cls.GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", cls.GOOGLE_CLIENT_SECRET)
         cls.WHITELIST_SENDERS = [
             email.strip().lower()
             for email in os.getenv("WHITELIST_SENDERS", "").split(",")

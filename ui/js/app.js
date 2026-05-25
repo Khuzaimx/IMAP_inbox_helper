@@ -367,7 +367,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 const hasAppPassword = data.IMAP_USER && data.IMAP_PASSWORD;
                 const hasOAuth = data.oauth_enabled;
                 const loginWall = document.getElementById("login-wall-overlay");
-                
+
                 if (!hasAppPassword && !hasOAuth) {
                     if (loginWall) loginWall.classList.remove("hidden");
                 } else {
@@ -692,17 +692,100 @@ document.addEventListener("DOMContentLoaded", () => {
         consoleLogsList.scrollTop = scrollTop;
     }
 
-    // ==========================================================================
+    // =========================================================================
     // Login Wall Overlay Controls
-    // ==========================================================================
+    // =========================================================================
     const loginTabGoogleBtn = document.getElementById("login-tab-google-btn");
     const loginTabPasswdBtn = document.getElementById("login-tab-passwd-btn");
     const loginModeGoogle = document.getElementById("login-mode-google");
     const loginModePasswd = document.getElementById("login-mode-passwd");
-    
+
     const wallOauthConnectBtn = document.getElementById("wall-oauth-connect-btn");
     const wallPasswdConnectBtn = document.getElementById("wall-passwd-connect-btn");
     const viewGuideLink = document.getElementById("view-guide-link");
+
+    // Toggle Custom OAuth Keys
+    const useCustomOauthCheckbox = document.getElementById("wall-oauth-use-custom");
+    const customOauthFields = document.getElementById("wall-oauth-custom-fields");
+    if (useCustomOauthCheckbox && customOauthFields) {
+        useCustomOauthCheckbox.addEventListener("change", () => {
+            if (useCustomOauthCheckbox.checked) {
+                customOauthFields.classList.remove("hidden");
+            } else {
+                customOauthFields.classList.add("hidden");
+            }
+        });
+    }
+
+    // Toggle Advanced IMAP Settings
+    const useAdvancedImapCheckbox = document.getElementById("wall-passwd-use-advanced");
+    const advancedImapFields = document.getElementById("wall-passwd-advanced-fields");
+    if (useAdvancedImapCheckbox && advancedImapFields) {
+        useAdvancedImapCheckbox.addEventListener("change", () => {
+            if (useAdvancedImapCheckbox.checked) {
+                advancedImapFields.classList.remove("hidden");
+            } else {
+                advancedImapFields.classList.add("hidden");
+            }
+        });
+    }
+
+    // Handle IMAP Provider Presets
+    const providerDropdown = document.getElementById("wall-passwd-provider");
+    const providerGuide = document.getElementById("wall-provider-instructions");
+    const passwdHostInput = document.getElementById("wall-passwd-host");
+    const passwdPortInput = document.getElementById("wall-passwd-port");
+    const passwdSslInput = document.getElementById("wall-passwd-ssl");
+
+    const providerSettings = {
+        gmail: {
+            host: "imap.gmail.com",
+            port: 993,
+            ssl: true,
+            guide: 'Gmail App Passwords:<br>1. Go to <a href="https://myaccount.google.com/apppasswords" target="_blank" style="color: #63b3ed; text-decoration: underline;">Google App Passwords</a>.<br>2. Generate a 16-character code (e.g. "InboxHelper").<br>3. Copy the code and paste it below.'
+        },
+        outlook: {
+            host: "outlook.office365.com",
+            port: 993,
+            ssl: true,
+            guide: 'Outlook App Passwords:<br>1. Go to <a href="https://account.live.com/proofs/manage/additional" target="_blank" style="color: #63b3ed; text-decoration: underline;">Microsoft Security Manage</a>.<br>2. Click "Create a new app password".<br>3. Copy the code and paste it below.'
+        },
+        yahoo: {
+            host: "imap.mail.yahoo.com",
+            port: 993,
+            ssl: true,
+            guide: 'Yahoo App Passwords:<br>1. Go to Yahoo Account Security > Manage App Passwords.<br>2. Generate a code and paste it below.'
+        },
+        icloud: {
+            host: "imap.mail.me.com",
+            port: 993,
+            ssl: true,
+            guide: 'iCloud App Passwords:<br>1. Go to <a href="https://appleid.apple.com" target="_blank" style="color: #63b3ed; text-decoration: underline;">Apple ID Manager</a>.<br>2. Under Sign-In and Security > App-Specific Passwords, generate a code.<br>3. Paste the code below.'
+        },
+        custom: {
+            host: "",
+            port: 993,
+            ssl: true,
+            guide: 'Enter your custom IMAP credentials below. Check the "Show Advanced IMAP Settings" box if you need to override the IMAP Host or Port.'
+        }
+    };
+
+    function updateProviderPreset() {
+        const val = providerDropdown.value;
+        const preset = providerSettings[val];
+        if (preset) {
+            passwdHostInput.value = preset.host;
+            passwdPortInput.value = preset.port;
+            passwdSslInput.checked = preset.ssl;
+            providerGuide.innerHTML = preset.guide;
+        }
+    }
+
+    if (providerDropdown) {
+        providerDropdown.addEventListener("change", updateProviderPreset);
+        // Trigger initial preset loading
+        updateProviderPreset();
+    }
 
     // Login Card Tab switches
     if (loginTabGoogleBtn && loginTabPasswdBtn) {
@@ -727,18 +810,30 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!window.pywebview || !window.pywebview.api) return;
 
             const oauthEmail = document.getElementById("wall-imap-user").value.trim();
-            const clientID = document.getElementById("wall-client-id").value.trim();
-            const clientSecret = document.getElementById("wall-client-secret").value.trim();
+            const useCustom = document.getElementById("wall-oauth-use-custom").checked;
 
-            if (!oauthEmail || !clientID || !clientSecret) {
-                alert("Please fill in your Email, Client ID, and Client Secret to sign in.");
+            let clientID = "";
+            let clientSecret = "";
+
+            if (useCustom) {
+                clientID = document.getElementById("wall-client-id").value.trim();
+                clientSecret = document.getElementById("wall-client-secret").value.trim();
+
+                if (!clientID || !clientSecret) {
+                    alert("Please enter both your custom Google Client ID and Client Secret.");
+                    return;
+                }
+            }
+
+            if (!oauthEmail) {
+                alert("Please enter your Gmail address to sign in.");
                 return;
             }
 
             wallOauthConnectBtn.innerText = "Signing In...";
             wallOauthConnectBtn.disabled = true;
 
-            // 1. Save settings to SQLite first so OAuth knows which IDs and user to use
+            // 1. Save settings to SQLite first so OAuth knows which user to use
             const config = {
                 IMAP_HOST: "imap.gmail.com",
                 IMAP_PORT: 993,
@@ -757,12 +852,12 @@ document.addEventListener("DOMContentLoaded", () => {
             window.pywebview.api.save_settings(JSON.stringify(config)).then(saveRes => {
                 const saveObj = JSON.parse(saveRes);
                 if (saveObj.success) {
-                    // 2. Start OAuth flow
-                    window.pywebview.api.start_oauth_flow().then(flowRes => {
+                    // 2. Start OAuth flow passing custom keys if specified
+                    window.pywebview.api.start_oauth_flow(oauthEmail, clientID, clientSecret).then(flowRes => {
                         const flow = JSON.parse(flowRes);
                         if (flow.success) {
                             alert("Opening Google Login screen in your browser. Please authorize access, then return here.");
-                            
+
                             let pollCounter = 0;
                             let wallInterval = setInterval(() => {
                                 pollCounter++;
@@ -772,7 +867,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                         clearInterval(wallInterval);
                                         wallOauthConnectBtn.innerText = "Sign In with Google";
                                         wallOauthConnectBtn.disabled = false;
-                                        
+
                                         // Hide Overlay & Refresh
                                         document.getElementById("login-wall-overlay").classList.add("hidden");
                                         loadSettings();
@@ -845,7 +940,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     window.pywebview.api.trigger_manual_sync().then(() => {
                         wallPasswdConnectBtn.innerText = "Connect & Sign In";
                         wallPasswdConnectBtn.disabled = false;
-                        
+
                         // Hide login wall and reload
                         document.getElementById("login-wall-overlay").classList.add("hidden");
                         loadSettings();
@@ -867,11 +962,11 @@ document.addEventListener("DOMContentLoaded", () => {
         viewGuideLink.addEventListener("click", (e) => {
             e.preventDefault();
             alert("Google Cloud OAuth Setup Guide:\n" +
-                  "1. Create a free project on console.cloud.google.com\n" +
-                  "2. Go to APIs & Services > Credentials\n" +
-                  "3. Configure Consent Screen: set to External and add your email to Test Users\n" +
-                  "4. Create OAuth Web Application Credentials redirecting to http://localhost:8080/\n" +
-                  "5. Copy Client ID and Secret, paste them into the Google fields, and Sign In!");
+                "1. Create a free project on console.cloud.google.com\n" +
+                "2. Go to APIs & Services > Credentials\n" +
+                "3. Configure Consent Screen: set to External and add your email to Test Users\n" +
+                "4. Create OAuth Web Application Credentials redirecting to http://localhost:8080/\n" +
+                "5. Copy Client ID and Secret, paste them into the Google fields, and Sign In!");
         });
     }
 

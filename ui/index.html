@@ -11,6 +11,130 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
+    <!-- Non-blocking custom alert system to prevent Edge WebView2 thread deadlocks -->
+    <script>
+        window.alert = function(message) {
+            console.log("Custom alert triggered: " + message);
+            
+            let alertOverlay = document.getElementById("custom-alert-overlay");
+            if (!alertOverlay) {
+                alertOverlay = document.createElement("div");
+                alertOverlay.id = "custom-alert-overlay";
+                alertOverlay.style.position = "fixed";
+                alertOverlay.style.top = "0";
+                alertOverlay.style.left = "0";
+                alertOverlay.style.width = "100vw";
+                alertOverlay.style.height = "100vh";
+                alertOverlay.style.backgroundColor = "rgba(9, 9, 11, 0.85)";
+                alertOverlay.style.backdropFilter = "blur(8px)";
+                alertOverlay.style.webkitBackdropFilter = "blur(8px)";
+                alertOverlay.style.zIndex = "100000";
+                alertOverlay.style.display = "flex";
+                alertOverlay.style.alignItems = "center";
+                alertOverlay.style.justifyContent = "center";
+                alertOverlay.style.opacity = "0";
+                alertOverlay.style.transition = "opacity 0.15s ease";
+                
+                const alertCard = document.createElement("div");
+                alertCard.id = "custom-alert-card";
+                alertCard.style.width = "380px";
+                alertCard.style.backgroundColor = "#161619";
+                alertCard.style.border = "1px solid #27272a";
+                alertCard.style.borderRadius = "8px";
+                alertCard.style.padding = "20px";
+                alertCard.style.boxShadow = "0 20px 40px rgba(0, 0, 0, 0.4)";
+                alertCard.style.display = "flex";
+                alertCard.style.flexDirection = "column";
+                alertCard.style.gap = "14px";
+                alertCard.style.transform = "scale(0.95)";
+                alertCard.style.transition = "transform 0.15s ease";
+                
+                const alertTitle = document.createElement("h3");
+                alertTitle.innerText = "System Notification";
+                alertTitle.style.fontSize = "14px";
+                alertTitle.style.fontWeight = "700";
+                alertTitle.style.color = "#fafafa";
+                alertTitle.style.margin = "0";
+                alertTitle.style.fontFamily = "'Plus Jakarta Sans', sans-serif";
+                
+                const alertText = document.createElement("p");
+                alertText.id = "custom-alert-text";
+                alertText.style.fontSize = "11px";
+                alertText.style.color = "#a1a1aa";
+                alertText.style.lineHeight = "1.5";
+                alertText.style.margin = "0";
+                alertText.style.whiteSpace = "pre-wrap";
+                alertText.style.textAlign = "left";
+                alertText.style.fontFamily = "'Plus Jakarta Sans', sans-serif";
+                
+                const alertBtn = document.createElement("button");
+                alertBtn.innerText = "OK";
+                alertBtn.style.padding = "8px 16px";
+                alertBtn.style.borderRadius = "6px";
+                alertBtn.style.fontSize = "12px";
+                alertBtn.style.fontWeight = "600";
+                alertBtn.style.cursor = "pointer";
+                alertBtn.style.backgroundColor = "#2563eb";
+                alertBtn.style.color = "#ffffff";
+                alertBtn.style.border = "none";
+                alertBtn.style.textAlign = "center";
+                alertBtn.style.transition = "background-color 0.12s ease";
+                alertBtn.style.fontFamily = "'Plus Jakarta Sans', sans-serif";
+                
+                alertBtn.addEventListener("mouseover", () => {
+                    alertBtn.style.backgroundColor = "#1d4ed8";
+                });
+                alertBtn.addEventListener("mouseout", () => {
+                    alertBtn.style.backgroundColor = "#2563eb";
+                });
+                
+                const closeAlert = () => {
+                    alertOverlay.style.opacity = "0";
+                    alertCard.style.transform = "scale(0.95)";
+                    setTimeout(() => {
+                        alertOverlay.style.display = "none";
+                    }, 150);
+                    window.removeEventListener("keydown", handleKey);
+                };
+                
+                const handleKey = (e) => {
+                    if (e.key === "Enter" || e.key === "Escape") {
+                        e.preventDefault();
+                        closeAlert();
+                    }
+                };
+                
+                alertBtn.addEventListener("click", closeAlert);
+                
+                alertCard.appendChild(alertTitle);
+                alertCard.appendChild(alertText);
+                alertCard.appendChild(alertBtn);
+                alertOverlay.appendChild(alertCard);
+                document.body.appendChild(alertOverlay);
+                
+                alertOverlay.closeAlert = closeAlert;
+                alertOverlay.handleKey = handleKey;
+            }
+            
+            const textEl = document.getElementById("custom-alert-text");
+            textEl.innerText = message;
+            
+            const cardEl = document.getElementById("custom-alert-card");
+            
+            alertOverlay.style.display = "flex";
+            alertOverlay.offsetHeight; // Force layout recalculation
+            
+            alertOverlay.style.opacity = "1";
+            cardEl.style.transform = "scale(1)";
+            
+            setTimeout(() => {
+                const btn = alertOverlay.querySelector("button");
+                if (btn) btn.focus();
+            }, 50);
+            
+            window.addEventListener("keydown", alertOverlay.handleKey);
+        };
+    </script>
 </head>
 <body>
     <!-- Premium Login Wall Overlay (Blocks access until signed in) -->
@@ -20,23 +144,34 @@
             <p>Please authorize your Gmail account or enter your IMAP credentials to establish a secure local connection.</p>
             
             <div class="login-tabs">
-                <button class="login-tab-btn active" id="login-tab-google-btn">Google OAuth2 (Direct Sync)</button>
-                <button class="login-tab-btn" id="login-tab-passwd-btn">Standard IMAP Password</button>
+                <button class="login-tab-btn active" id="login-tab-google-btn">Google Sign-In</button>
+                <button class="login-tab-btn" id="login-tab-passwd-btn">IMAP App Password</button>
             </div>
             
             <!-- Tab A: Google Login -->
             <div class="login-mode-pane active" id="login-mode-google">
+                <p style="font-size: 0.82rem; color: #a0aec0; margin-bottom: 15px; line-height: 1.4;">
+                    Securely authorize InboxHelper to sync and sort your mailbox via Google OAuth2. No passwords are shared.
+                </p>
                 <div class="form-group">
-                    <label for="wall-imap-user">Email Address</label>
+                    <label for="wall-imap-user">Gmail Address</label>
                     <input type="email" id="wall-imap-user" placeholder="yourname@gmail.com">
                 </div>
-                <div class="form-group">
-                    <label for="wall-client-id">Google Client ID</label>
-                    <input type="text" id="wall-client-id" placeholder="Paste Google Client ID">
+                <div class="form-group check-group" style="margin-top: 10px; margin-bottom: 12px;">
+                    <label for="wall-oauth-use-custom" style="font-size: 0.8rem; font-weight: 500; cursor: pointer; color: #a0aec0;">
+                        <input type="checkbox" id="wall-oauth-use-custom" style="vertical-align: middle; margin-right: 6px;">
+                        Use custom developer API keys
+                    </label>
                 </div>
-                <div class="form-group">
-                    <label for="wall-client-secret">Google Client Secret</label>
-                    <input type="password" id="wall-client-secret" placeholder="Paste Client Secret">
+                <div id="wall-oauth-custom-fields" class="hidden" style="margin-bottom: 12px; padding: 10px; border-left: 2px solid #4a5568; background: rgba(255,255,255,0.01); border-radius: 0 4px 4px 0;">
+                    <div class="form-group">
+                        <label for="wall-client-id">Google Client ID</label>
+                        <input type="text" id="wall-client-id" placeholder="Paste Google Client ID">
+                    </div>
+                    <div class="form-group">
+                        <label for="wall-client-secret">Google Client Secret</label>
+                        <input type="password" id="wall-client-secret" placeholder="Paste Client Secret">
+                    </div>
                 </div>
                 <button class="btn btn-primary btn-block" id="wall-oauth-connect-btn">Sign In with Google</button>
             </div>
@@ -44,19 +179,20 @@
             <!-- Tab B: Traditional Password -->
             <div class="login-mode-pane" id="login-mode-passwd">
                 <div class="form-group">
-                    <label for="wall-passwd-host">IMAP Server Host</label>
-                    <input type="text" id="wall-passwd-host" placeholder="imap.gmail.com" value="imap.gmail.com">
+                    <label for="wall-passwd-provider">Email Provider</label>
+                    <select id="wall-passwd-provider" style="width: 100%; background: #161a24; border: 1px solid #2d3748; color: #fff; padding: 8px; border-radius: 4px; font-family: inherit; font-size: 0.9rem;">
+                        <option value="gmail">Gmail</option>
+                        <option value="outlook">Outlook / Hotmail / Office365</option>
+                        <option value="yahoo">Yahoo Mail</option>
+                        <option value="icloud">iCloud Mail</option>
+                        <option value="custom">Custom IMAP (Manual)</option>
+                    </select>
                 </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="wall-passwd-port">Port</label>
-                        <input type="number" id="wall-passwd-port" placeholder="993" value="993">
-                    </div>
-                    <div class="form-group check-group" style="padding-top: 20px;">
-                        <label for="wall-passwd-ssl">Use SSL</label>
-                        <input type="checkbox" id="wall-passwd-ssl" checked>
-                    </div>
+                
+                <div id="wall-provider-instructions" style="font-size: 0.8rem; color: #a0aec0; margin-top: -5px; margin-bottom: 12px; background: rgba(255,255,255,0.02); padding: 8px; border-radius: 4px; border-left: 2px solid #4a5568; line-height: 1.4;">
+                    <!-- Populated dynamically via JS -->
                 </div>
+
                 <div class="form-group">
                     <label for="wall-passwd-user">Email Address</label>
                     <input type="email" id="wall-passwd-user" placeholder="yourname@gmail.com">
@@ -65,6 +201,31 @@
                     <label for="wall-passwd-code">App Password</label>
                     <input type="password" id="wall-passwd-code" placeholder="16-character App Password">
                 </div>
+
+                <div class="form-group check-group" style="margin-top: 10px; margin-bottom: 12px;">
+                    <label for="wall-passwd-use-advanced" style="font-size: 0.8rem; font-weight: 500; cursor: pointer; color: #a0aec0;">
+                        <input type="checkbox" id="wall-passwd-use-advanced" style="vertical-align: middle; margin-right: 6px;">
+                        Show Advanced IMAP Settings
+                    </label>
+                </div>
+
+                <div id="wall-passwd-advanced-fields" class="hidden" style="margin-bottom: 12px; padding: 10px; border-left: 2px solid #4a5568; background: rgba(255,255,255,0.01); border-radius: 0 4px 4px 0;">
+                    <div class="form-group">
+                        <label for="wall-passwd-host">IMAP Server Host</label>
+                        <input type="text" id="wall-passwd-host" placeholder="imap.gmail.com" value="imap.gmail.com">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="wall-passwd-port">Port</label>
+                            <input type="number" id="wall-passwd-port" placeholder="993" value="993">
+                        </div>
+                        <div class="form-group check-group" style="padding-top: 20px;">
+                            <label for="wall-passwd-ssl">Use SSL</label>
+                            <input type="checkbox" id="wall-passwd-ssl" checked style="vertical-align: middle; margin-right: 6px;">
+                        </div>
+                    </div>
+                </div>
+
                 <button class="btn btn-primary btn-block" id="wall-passwd-connect-btn">Connect & Sign In</button>
             </div>
             

@@ -156,19 +156,18 @@ class GUIBridge:
         }
         return json.dumps({"success": True, "data": status})
 
-    def start_oauth_flow(self) -> str:
+    def start_oauth_flow(self, email: str = None, custom_client_id: str = None, custom_client_secret: str = None) -> str:
         """Initiates the background sign-in HTTP listener and opens Google Auth window."""
-        client_id = db.get_setting("google_client_id")
-        client_secret = db.get_setting("google_client_secret")
+        client_id = (custom_client_id or "").strip() or db.get_setting("google_client_id") or Config.GOOGLE_CLIENT_ID
+        client_secret = (custom_client_secret or "").strip() or db.get_setting("google_client_secret") or Config.GOOGLE_CLIENT_SECRET
         
-        # We will use the IMAP Username configured in settings to identify the mailbox syncing
-        oauth_email = Config.IMAP_USER
+        oauth_email = (email or "").strip() or Config.IMAP_USER
         
         if not client_id or not client_secret:
-            return json.dumps({"success": False, "error": "Please configure your Google OAuth Client ID and Secret in Settings first."})
+            return json.dumps({"success": False, "error": "Google OAuth credentials not configured. Please contact the developer or enable Custom Developer Keys."})
             
         if not oauth_email:
-            return json.dumps({"success": False, "error": "Please enter your Email Address in IMAP settings first so we know which inbox to authorize."})
+            return json.dumps({"success": False, "error": "Please enter your Email Address to initiate secure Google Sign-In."})
 
         def run_flow_thread():
             try:

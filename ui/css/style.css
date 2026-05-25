@@ -987,9 +987,10 @@ button, input, textarea {
     background-color: var(--bg-primary);
     z-index: 9999;
     display: flex;
-    align-items: center;
+    align-items: flex-start; /* Switch to flex-start so content starts at top when scrolling */
     justify-content: center;
-    padding: 20px;
+    padding: 30px 20px;
+    overflow-y: auto;        /* Enable scrollable overflow for small screen heights */
 }
 
 .login-wall-overlay.hidden {
@@ -998,29 +999,30 @@ button, input, textarea {
 
 .login-card {
     width: 440px;
+    margin: auto 0;          /* Auto margin perfectly centers vertically on large displays, and permits scrolling on small ones */
     border-radius: var(--radius-lg);
     border: 1px solid var(--border-color);
     background-color: var(--card-bg);
-    padding: 32px;
+    padding: 24px;           /* Reduced padding from 32px to keep it compact */
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 12px;               /* Reduced gap from 16px to conserve vertical space */
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
 }
 
 .login-card h2 {
-    font-size: 18px;
+    font-size: 16px;         /* Sized down heading slightly */
     font-weight: 700;
     text-align: center;
     letter-spacing: -0.2px;
 }
 
 .login-card p {
-    font-size: 12px;
+    font-size: 11px;         /* Sized down text slightly */
     color: var(--text-secondary);
     text-align: center;
-    line-height: 1.5;
-    margin-bottom: 8px;
+    line-height: 1.4;
+    margin-bottom: 4px;
 }
 
 .login-tabs {
