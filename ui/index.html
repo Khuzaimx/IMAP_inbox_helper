@@ -11,6 +11,67 @@
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+    <!-- Premium Login Wall Overlay (Blocks access until signed in) -->
+    <div id="login-wall-overlay" class="login-wall-overlay hidden">
+        <div class="login-card glass">
+            <h2>Welcome to InboxHelper</h2>
+            <p>Please authorize your Gmail account or enter your IMAP credentials to establish a secure local connection.</p>
+            
+            <div class="login-tabs">
+                <button class="login-tab-btn active" id="login-tab-google-btn">Google OAuth2 (Direct Sync)</button>
+                <button class="login-tab-btn" id="login-tab-passwd-btn">Standard IMAP Password</button>
+            </div>
+            
+            <!-- Tab A: Google Login -->
+            <div class="login-mode-pane active" id="login-mode-google">
+                <div class="form-group">
+                    <label for="wall-imap-user">Email Address</label>
+                    <input type="email" id="wall-imap-user" placeholder="yourname@gmail.com">
+                </div>
+                <div class="form-group">
+                    <label for="wall-client-id">Google Client ID</label>
+                    <input type="text" id="wall-client-id" placeholder="Paste Google Client ID">
+                </div>
+                <div class="form-group">
+                    <label for="wall-client-secret">Google Client Secret</label>
+                    <input type="password" id="wall-client-secret" placeholder="Paste Client Secret">
+                </div>
+                <button class="btn btn-primary btn-block" id="wall-oauth-connect-btn">Sign In with Google</button>
+            </div>
+            
+            <!-- Tab B: Traditional Password -->
+            <div class="login-mode-pane" id="login-mode-passwd">
+                <div class="form-group">
+                    <label for="wall-passwd-host">IMAP Server Host</label>
+                    <input type="text" id="wall-passwd-host" placeholder="imap.gmail.com" value="imap.gmail.com">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="wall-passwd-port">Port</label>
+                        <input type="number" id="wall-passwd-port" placeholder="993" value="993">
+                    </div>
+                    <div class="form-group check-group" style="padding-top: 20px;">
+                        <label for="wall-passwd-ssl">Use SSL</label>
+                        <input type="checkbox" id="wall-passwd-ssl" checked>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="wall-passwd-user">Email Address</label>
+                    <input type="email" id="wall-passwd-user" placeholder="yourname@gmail.com">
+                </div>
+                <div class="form-group">
+                    <label for="wall-passwd-code">App Password</label>
+                    <input type="password" id="wall-passwd-code" placeholder="16-character App Password">
+                </div>
+                <button class="btn btn-primary btn-block" id="wall-passwd-connect-btn">Connect & Sign In</button>
+            </div>
+            
+            <div class="login-footer">
+                <small>Credentials are stored 100% locally in SQLite. Read the <a href="#" id="view-guide-link">setup guide</a>.</small>
+            </div>
+        </div>
+    </div>
+
     <div class="app-container">
         
         <!-- Sidebar Navigation -->
@@ -157,13 +218,31 @@
                                     <label for="POLL_INTERVAL">Background Sync Interval (seconds)</label>
                                     <input type="number" id="POLL_INTERVAL" required placeholder="300">
                                 </div>
-                                <div class="form-group">
+                                <div class="form-group" style="margin-bottom: 20px;">
                                     <label for="IMPORTANCE_THRESHOLD">Importance Threshold Score (0 - 100)</label>
                                     <div class="slider-wrapper">
                                         <input type="range" id="IMPORTANCE_THRESHOLD" min="10" max="90" value="50" oninput="this.nextElementSibling.innerText = this.value">
                                         <span class="slider-val">50</span>
                                     </div>
                                     <small>Scores equal or higher than this are marked as Important.</small>
+                                </div>
+
+                                <h3>Google OAuth2 Integration</h3>
+                                <div class="form-group">
+                                    <label for="google_client_id">Google OAuth Client ID</label>
+                                    <input type="text" id="google_client_id" placeholder="Paste Google Client ID">
+                                </div>
+                                <div class="form-group">
+                                    <label for="google_client_secret">Google OAuth Client Secret</label>
+                                    <input type="password" id="google_client_secret" placeholder="Paste Client Secret">
+                                </div>
+                                <div class="form-group">
+                                    <label>Direct Sync Status</label>
+                                    <div style="display: flex; align-items: center; gap: 8px; margin-top: 2px;">
+                                        <span id="oauth-status-badge" class="badge score-low">Deactivated</span>
+                                        <button type="button" class="btn btn-secondary" id="oauth-connect-btn" style="padding: 4px 10px; font-size: 11px;">Connect Gmail</button>
+                                    </div>
+                                    <small id="oauth-status-text">Using App Password by default. Save Google credentials to connect.</small>
                                 </div>
                             </div>
                         </div>

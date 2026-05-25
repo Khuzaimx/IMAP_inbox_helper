@@ -1,8 +1,10 @@
 import json
+import threading
 from config import Config
 import db
 from imap_client import IMAPInboxManager
 from classifier import analyze_email
+import oauth_flow
 
 class GUIBridge:
     def __init__(self, app_state):
@@ -40,8 +42,6 @@ class GUIBridge:
                     if action == "mark_read":
                         db.update_read_status(message_id, is_read=True)
                     elif action == "delete":
-                        # We can flag it locally, or remove it, or update it
-                        # Let's mark it in DB or remove it
                         conn = db.get_connection()
                         cursor = conn.cursor()
                         cursor.execute("DELETE FROM emails WHERE message_id = ?", (message_id,))
@@ -65,7 +65,7 @@ class GUIBridge:
             return json.dumps({"success": False, "error": str(e)})
 
     def get_settings(self) -> str:
-        """Returns the current configurations as a JSON string."""
+        """Returns the current configurations as a JSON string including OAuth rules."""
         settings = {
             "IMAP_HOST": Config.IMAP_HOST,
             "IMAP_PORT": Config.IMAP_PORT,
@@ -76,12 +76,16 @@ class GUIBridge:
             "POLL_INTERVAL": Config.POLL_INTERVAL,
             "IMPORTANCE_THRESHOLD": Config.IMPORTANCE_THRESHOLD,
             "WHITELIST_SENDERS": ", ".join(Config.WHITELIST_SENDERS),
-            "BLACKLIST_SENDERS": ", ".join(Config.BLACKLIST_SENDERS)
+            "BLACKLIST_SENDERS": ", ".join(Config.BLACKLIST_SENDERS),
+            # Load Google Client details from secure SQLite Settings
+            "google_client_id": db.get_setting("google_client_id", ""),
+            "google_client_secret": db.get_setting("google_client_secret", ""),
+            "oauth_enabled": db.get_setting("oauth_enabled", "False") == "True"
         }
         return json.dumps({"success": True, "data": settings})
 
     def save_settings(self, settings_json: str) -> str:
-        """Saves settings passed from JS to the local .env configuration file."""
+        """Saves settings passed from JS to the local .env configuration file and SQLite settings."""
         try:
             settings = json.loads(settings_json)
             updates = {
@@ -93,13 +97,18 @@ class GUIBridge:
                 "MONITOR_FOLDER": settings.get("MONITOR_FOLDER", "INBOX").strip(),
                 "POLL_INTERVAL": int(settings.get("POLL_INTERVAL", 300)),
                 "IMPORTANCE_THRESHOLD": int(settings.get("IMPORTANCE_THRESHOLD", 50)),
-                # Format whitelists/blacklists back into comma-separated items
                 "WHITELIST_SENDERS": ",".join([x.strip() for x in settings.get("WHITELIST_SENDERS", "").split(",") if x.strip()]),
                 "BLACKLIST_SENDERS": ",".join([x.strip() for x in settings.get("BLACKLIST_SENDERS", "").split(",") if x.strip()])
             }
             
+            # Save base credentials in .env file
             Config.save_to_env_file(updates)
-            db.log_event("CONFIG", "Configuration updated and reloaded from Dashboard.")
+            
+            # Save Google OAuth Credentials in secure SQLite settings table
+            db.set_setting("google_client_id", settings.get("google_client_id", "").strip())
+            db.set_setting("google_client_secret", settings.get("google_client_secret", "").strip())
+            
+            db.log_event("CONFIG", "Configuration updated successfully.")
             return json.dumps({"success": True})
         except Exception as e:
             db.log_event("ERROR", f"Failed to save settings: {e}")
@@ -109,7 +118,6 @@ class GUIBridge:
         """Triggers an immediate background sync thread of the mailbox."""
         try:
             db.log_event("SYNC", "Manual synchronization triggered by user.")
-            # Set the sync flag in our shared state
             self.app_state["trigger_sync"] = True
             return json.dumps({"success": True})
         except Exception as e:
@@ -128,6 +136,65 @@ class GUIBridge:
         """Clears SQLite indexed emails and log history."""
         try:
             db.clear_all_data()
+            return json.dumps({"success": True})
+        except Exception as e:
+            return json.dumps({"success": False, "error": str(e)})
+
+    # ==========================================================================
+    # Google OAuth2 Bridge Actions
+    # ==========================================================================
+    def get_oauth_status(self) -> str:
+        """Checks Google Sign-In authorization status for the dashboard UI."""
+        refresh_token = db.get_setting("oauth_refresh_token")
+        email = db.get_setting("oauth_user_email")
+        enabled = db.get_setting("oauth_enabled") == "True"
+        
+        status = {
+            "authorized": refresh_token is not None,
+            "email": email or "",
+            "enabled": enabled
+        }
+        return json.dumps({"success": True, "data": status})
+
+    def start_oauth_flow(self) -> str:
+        """Initiates the background sign-in HTTP listener and opens Google Auth window."""
+        client_id = db.get_setting("google_client_id")
+        client_secret = db.get_setting("google_client_secret")
+        
+        # We will use the IMAP Username configured in settings to identify the mailbox syncing
+        oauth_email = Config.IMAP_USER
+        
+        if not client_id or not client_secret:
+            return json.dumps({"success": False, "error": "Please configure your Google OAuth Client ID and Secret in Settings first."})
+            
+        if not oauth_email:
+            return json.dumps({"success": False, "error": "Please enter your Email Address in IMAP settings first so we know which inbox to authorize."})
+
+        def run_flow_thread():
+            try:
+                db.log_event("OAUTH", "Google Sign-In sequence launched. Awaiting browser completion...")
+                tokens = oauth_flow.run_oauth_flow(client_id, client_secret)
+                
+                # Save tokens and activate
+                db.set_setting("oauth_refresh_token", tokens["refresh_token"])
+                db.set_setting("oauth_user_email", oauth_email)
+                db.set_setting("oauth_enabled", "True")
+                
+                db.log_event("SUCCESS", f"Successfully authenticated via Google OAuth2 for inbox: '{oauth_email}'")
+            except Exception as e:
+                db.log_event("ERROR", f"Google Sign-In flow failed: {e}")
+
+        # Spawn non-blocking thread so pywebview window remains fully active
+        threading.Thread(target=run_flow_thread, daemon=True).start()
+        return json.dumps({"success": True})
+
+    def disconnect_oauth(self) -> str:
+        """Deactivates Google Sign-In and clears stored local tokens."""
+        try:
+            db.set_setting("oauth_enabled", "False")
+            db.set_setting("oauth_refresh_token", "")
+            db.set_setting("oauth_user_email", "")
+            db.log_event("OAUTH", "Google OAuth disconnected. Reverting to App Password logins.")
             return json.dumps({"success": True})
         except Exception as e:
             return json.dumps({"success": False, "error": str(e)})

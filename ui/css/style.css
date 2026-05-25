@@ -974,3 +974,106 @@ button, input, textarea {
     align-items: center;
     width: 100%;
 }
+
+/* ==========================================================================
+   Login Wall Overlay Styles (Flat & Clean)
+   ========================================================================== */
+.login-wall-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: var(--bg-primary);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.login-wall-overlay.hidden {
+    display: none !important;
+}
+
+.login-card {
+    width: 440px;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-color);
+    background-color: var(--card-bg);
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+}
+
+.login-card h2 {
+    font-size: 18px;
+    font-weight: 700;
+    text-align: center;
+    letter-spacing: -0.2px;
+}
+
+.login-card p {
+    font-size: 12px;
+    color: var(--text-secondary);
+    text-align: center;
+    line-height: 1.5;
+    margin-bottom: 8px;
+}
+
+.login-tabs {
+    display: flex;
+    background-color: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border-color);
+    padding: 3px;
+    border-radius: var(--radius-sm);
+    gap: 2px;
+    margin-bottom: 12px;
+}
+
+.login-tab-btn {
+    flex: 1;
+    padding: 8px;
+    font-size: 11px;
+    font-weight: 600;
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    cursor: pointer;
+    text-align: center;
+    transition: var(--transition-fast);
+}
+
+.login-tab-btn.active {
+    background-color: rgba(255, 255, 255, 0.05);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+}
+
+.login-mode-pane {
+    display: none;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.login-mode-pane.active {
+    display: flex;
+}
+
+.login-footer {
+    text-align: center;
+    border-top: 1px solid var(--border-color);
+    padding-top: 14px;
+    margin-top: 6px;
+}
+
+.login-footer small {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.login-footer a {
+    color: var(--text-secondary);
+    text-decoration: underline;
+}

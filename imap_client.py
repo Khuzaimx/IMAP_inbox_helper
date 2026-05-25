@@ -5,8 +5,10 @@ from datetime import datetime
 import time
 from imapclient import IMAPClient
 from config import Config
+import db
 from db import log_event, insert_email
 from classifier import analyze_email
+import oauth_flow
 
 def decode_mime_header(header_value: str) -> str:
     """Decodes MIME encoded headers safely into standard unicode strings."""
@@ -79,11 +81,13 @@ class IMAPInboxManager:
         self.is_connected = False
 
     def connect(self) -> bool:
-        """Establishes an SSL connection to the IMAP server and logs in."""
-        if not Config.IMAP_USER or not Config.IMAP_PASSWORD:
-            log_event("WARNING", "IMAP credentials are not fully configured. Please configure them in settings.")
-            return False
-            
+        """Establishes an SSL connection to the IMAP server and logs in (supporting App Password and OAuth2)."""
+        oauth_enabled = db.get_setting("oauth_enabled") == "True"
+        oauth_refresh_token = db.get_setting("oauth_refresh_token")
+        oauth_email = db.get_setting("oauth_user_email")
+        client_id = db.get_setting("google_client_id")
+        client_secret = db.get_setting("google_client_secret")
+
         try:
             log_event("IMAP", f"Connecting to IMAP server {Config.IMAP_HOST}:{Config.IMAP_PORT}...")
             
@@ -91,10 +95,28 @@ class IMAPInboxManager:
             context = ssl.create_default_context()
             self.client = IMAPClient(Config.IMAP_HOST, port=Config.IMAP_PORT, ssl=Config.IMAP_SSL, ssl_context=context)
             
-            log_event("IMAP", "Logging in...")
+            # Check if Google OAuth2 is active and tokens exist
+            if oauth_enabled and oauth_refresh_token and oauth_email and client_id and client_secret:
+                log_event("IMAP", f"Authenticating using Google OAuth2 for email '{oauth_email}'...")
+                try:
+                    # Get a fresh Access Token using the stored Refresh Token
+                    access_token = oauth_flow.refresh_access_token(client_id, client_secret, oauth_refresh_token)
+                    self.client.oauth2_login(oauth_email, access_token)
+                    self.is_connected = True
+                    log_event("IMAP", "IMAP Google OAuth2 Login successful.")
+                    return True
+                except Exception as oauth_err:
+                    log_event("WARNING", f"Google OAuth2 login failed: {oauth_err}. Trying App Password fallback...")
+            
+            # Traditional App Password Fallback
+            if not Config.IMAP_USER or not Config.IMAP_PASSWORD:
+                log_event("WARNING", "Traditional IMAP credentials are not fully configured. Please configure them in settings.")
+                return False
+                
+            log_event("IMAP", "Logging in using App Password...")
             self.client.login(Config.IMAP_USER, Config.IMAP_PASSWORD)
             self.is_connected = True
-            log_event("IMAP", "IMAP Login successful.")
+            log_event("IMAP", "IMAP App Password Login successful.")
             return True
         except Exception as e:
             self.is_connected = False

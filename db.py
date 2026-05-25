@@ -43,8 +43,45 @@ def init_db():
         )
     """)
     
+    # App Settings/Tokens Table
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS settings (
+            key TEXT UNIQUE,
+            value TEXT
+        )
+    """)
+    
     conn.commit()
     conn.close()
+
+def get_setting(key: str, default: str = None) -> str:
+    """Retrieves a configuration value from the SQLite settings table."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("SELECT value FROM settings WHERE key = ?", (key,))
+        row = cursor.fetchone()
+        return row["value"] if row else default
+    except Exception as e:
+        print(f"Failed to fetch setting '{key}': {e}")
+        return default
+    finally:
+        conn.close()
+
+def set_setting(key: str, value: str):
+    """Saves or updates a configuration value in the SQLite settings table."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            "INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)",
+            (key, str(value))
+        )
+        conn.commit()
+    except Exception as e:
+        log_event("ERROR", f"Failed to save setting '{key}': {e}")
+    finally:
+        conn.close()
 
 def log_event(level: str, message: str):
     """Inserts a system event log into the local database and prints to standard output."""

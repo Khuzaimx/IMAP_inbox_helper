@@ -13,24 +13,24 @@ document.addEventListener("DOMContentLoaded", () => {
     function initApp() {
         if (window.pywebview && window.pywebview.api) {
             console.log("pywebview API loaded successfully.");
-            
+
             // Perform initial loads
             loadEmails();
             loadSettings();
             loadLogs();
-            
+
             // Set up polling to auto-update emails and logs in real-time
             autoUpdateInterval = setInterval(() => {
                 loadEmails(onlyImportantFilter, false); // silent refresh
                 loadLogs(false); // silent refresh
             }, 3000);
-            
+
         } else {
             // Keep polling until the window.pywebview exists
             setTimeout(initApp, 100);
         }
     }
-    
+
     // Start initialization sequence
     initApp();
 
@@ -43,11 +43,11 @@ document.addEventListener("DOMContentLoaded", () => {
     navButtons.forEach(btn => {
         btn.addEventListener("click", () => {
             const targetTab = btn.getAttribute("data-tab");
-            
+
             // Toggle active navigation button style
             navButtons.forEach(b => b.classList.remove("active"));
             btn.classList.add("active");
-            
+
             // Toggle active content panel visibility
             tabContents.forEach(tab => {
                 tab.classList.remove("active");
@@ -74,7 +74,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const emailDetailPane = document.getElementById("email-detail-pane");
     const filterAllBtn = document.getElementById("filter-all-btn");
     const filterImportantBtn = document.getElementById("filter-important-btn");
-    
+
     const countImportantEl = document.getElementById("important-count");
     const countClutterEl = document.getElementById("clutter-count");
     const countTotalEl = document.getElementById("total-count");
@@ -131,15 +131,15 @@ document.addEventListener("DOMContentLoaded", () => {
         emails.forEach(email => {
             const isSelected = selectedEmailId === email.message_id;
             const isUnread = !email.is_read;
-            
+
             const card = document.createElement("div");
             card.className = `email-card ${isSelected ? 'selected' : ''} ${isUnread ? 'unread' : ''}`;
             card.setAttribute("data-id", email.message_id);
-            
+
             const scoreClass = email.is_important ? "score-high" : "score-low";
             const scoreTag = email.is_important ? "Important" : "Bulk";
             const scoreStr = `${email.importance_score} | ${scoreTag}`;
-            
+
             // Format sender display name cleanly
             let senderDisplay = email.sender.replace(/<.*>/, "").trim();
             if (!senderDisplay) {
@@ -186,19 +186,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function selectEmailCard(email) {
         selectedEmailId = email.message_id;
-        
+
         // Highlight active card
         document.querySelectorAll(".email-card").forEach(c => c.classList.remove("selected"));
         const card = document.querySelector(`.email-card[data-id="${email.message_id}"]`);
         if (card) card.classList.add("selected");
-        
+
         renderEmailDetail(email);
     }
 
     function renderEmailDetail(email) {
         const scoreClass = email.is_important ? "score-high" : "score-low";
         const scoreBadge = email.is_important ? "IMPORTANT" : "BULK / CLUTTER";
-        
+
         // Split reasons
         const reasons = email.classification_reason ? email.classification_reason.split("; ") : [];
         const reasonsListHtml = reasons.map(r => `<li>${escapeHtml(r)}</li>`).join("");
@@ -256,7 +256,7 @@ document.addEventListener("DOMContentLoaded", () => {
             "archive": document.getElementById("action-archive-btn"),
             "delete": document.getElementById("action-delete-btn")
         };
-        
+
         const activeBtn = buttonMap[action];
         const originalText = activeBtn.innerText;
         activeBtn.innerText = "Processing...";
@@ -283,10 +283,10 @@ document.addEventListener("DOMContentLoaded", () => {
     function updateDashboardCounters(emails) {
         // Calculate totals based on currently loaded SQLite data
         if (!emails) return;
-        
+
         let importantCount = 0;
         let clutterCount = 0;
-        
+
         emails.forEach(e => {
             if (e.is_important) importantCount++;
             else clutterCount++;
@@ -301,10 +301,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const manualSyncBtn = document.getElementById("manual-sync-btn");
     manualSyncBtn.addEventListener("click", () => {
         if (!window.pywebview || !window.pywebview.api) return;
-        
+
         manualSyncBtn.innerText = "Syncing...";
         manualSyncBtn.disabled = true;
-        
+
         window.pywebview.api.trigger_manual_sync().then(response => {
             const res = JSON.parse(response);
             setTimeout(() => {
@@ -323,6 +323,14 @@ document.addEventListener("DOMContentLoaded", () => {
     const resetSettingsBtn = document.getElementById("reset-settings-btn");
     const saveSettingsBtn = document.getElementById("save-settings-btn");
 
+    const oauthStatusBadge = document.getElementById("oauth-status-badge");
+    const oauthConnectBtn = document.getElementById("oauth-connect-btn");
+    const oauthStatusText = document.getElementById("oauth-status-text");
+
+    let oauthCheckInterval = null;
+
+    let firstLaunchCheckDone = false;
+
     function loadSettings() {
         if (!window.pywebview || !window.pywebview.api) return;
 
@@ -338,18 +346,132 @@ document.addEventListener("DOMContentLoaded", () => {
                 document.getElementById("IMAP_PASSWORD").value = data.IMAP_PASSWORD || "";
                 document.getElementById("MONITOR_FOLDER").value = data.MONITOR_FOLDER || "INBOX";
                 document.getElementById("POLL_INTERVAL").value = data.POLL_INTERVAL || 300;
-                
+
+                // Google OAuth details
+                document.getElementById("google_client_id").value = data.google_client_id || "";
+                document.getElementById("google_client_secret").value = data.google_client_secret || "";
+
                 // Slider
                 const slider = document.getElementById("IMPORTANCE_THRESHOLD");
                 slider.value = data.IMPORTANCE_THRESHOLD || 50;
                 slider.nextElementSibling.innerText = slider.value;
-                
+
                 // Textareas
                 document.getElementById("WHITELIST_SENDERS").value = data.WHITELIST_SENDERS || "";
                 document.getElementById("BLACKLIST_SENDERS").value = data.BLACKLIST_SENDERS || "";
+
+                // Synchronize OAuth Status
+                loadOAuthStatus();
+
+                // Onboarding Check: Toggle Lock Screen Login Wall if unconfigured
+                const hasAppPassword = data.IMAP_USER && data.IMAP_PASSWORD;
+                const hasOAuth = data.oauth_enabled;
+                const loginWall = document.getElementById("login-wall-overlay");
+                
+                if (!hasAppPassword && !hasOAuth) {
+                    if (loginWall) loginWall.classList.remove("hidden");
+                } else {
+                    if (loginWall) loginWall.classList.add("hidden");
+                }
             }
         });
     }
+
+    function loadOAuthStatus() {
+        if (!window.pywebview || !window.pywebview.api) return;
+
+        window.pywebview.api.get_oauth_status().then(response => {
+            const res = JSON.parse(response);
+            if (res.success) {
+                const data = res.data;
+                if (data.authorized && data.enabled) {
+                    oauthStatusBadge.className = "badge score-high";
+                    oauthStatusBadge.innerText = "Authorized";
+                    oauthConnectBtn.innerText = "Disconnect Gmail";
+                    oauthStatusText.innerHTML = `Connected securely to Gmail as: <strong>${escapeHtml(data.email)}</strong>`;
+                } else {
+                    oauthStatusBadge.className = "badge score-low";
+                    oauthStatusBadge.innerText = "Deactivated";
+                    oauthConnectBtn.innerText = "Connect Gmail";
+                    oauthStatusText.innerText = "Using App Password by default. Save Google credentials above to connect.";
+                }
+            }
+        });
+    }
+
+    // Google OAuth Link Button click handler
+    oauthConnectBtn.addEventListener("click", () => {
+        if (!window.pywebview || !window.pywebview.api) return;
+
+        window.pywebview.api.get_oauth_status().then(response => {
+            const res = JSON.parse(response);
+            if (res.success) {
+                const data = res.data;
+
+                if (data.authorized && data.enabled) {
+                    // Disconnect
+                    if (confirm("Disconnect Google Sign-In and revert to standard App Password logins?")) {
+                        window.pywebview.api.disconnect_oauth().then(discRes => {
+                            const disc = JSON.parse(discRes);
+                            if (disc.success) {
+                                loadOAuthStatus();
+                                loadLogs();
+                            }
+                        });
+                    }
+                } else {
+                    // Start Google auth flow
+                    // Validate that ID and Secret are configured
+                    const clientID = document.getElementById("google_client_id").value.trim();
+                    const clientSecret = document.getElementById("google_client_secret").value.trim();
+
+                    if (!clientID || !clientSecret) {
+                        alert("Please enter both Google Client ID and Client Secret, click 'Save Configurations', and then click 'Connect Gmail'.");
+                        return;
+                    }
+
+                    oauthConnectBtn.innerText = "Connecting...";
+                    oauthConnectBtn.disabled = true;
+
+                    window.pywebview.api.start_oauth_flow().then(flowRes => {
+                        const flow = JSON.parse(flowRes);
+                        if (flow.success) {
+                            alert("Opening Google Login screen in your browser. Please log in and authorize the application, then return here.");
+
+                            // Poll in background for auth state change
+                            let pollCounter = 0;
+                            if (oauthCheckInterval) clearInterval(oauthCheckInterval);
+
+                            oauthCheckInterval = setInterval(() => {
+                                pollCounter++;
+                                window.pywebview.api.get_oauth_status().then(statusRes => {
+                                    const statusObj = JSON.parse(statusRes);
+                                    if (statusObj.success && statusObj.data.authorized && statusObj.data.enabled) {
+                                        clearInterval(oauthCheckInterval);
+                                        loadOAuthStatus();
+                                        loadLogs();
+                                        alert("Gmail OAuth Direct Sync linked successfully!");
+                                    }
+                                });
+
+                                // Timeout after 60 seconds of polling
+                                if (pollCounter >= 40) {
+                                    clearInterval(oauthCheckInterval);
+                                    loadOAuthStatus();
+                                    alert("Google Authorization timed out. Please try again.");
+                                }
+                            }, 1500);
+
+                        } else {
+                            oauthConnectBtn.innerText = "Connect Gmail";
+                            oauthConnectBtn.disabled = false;
+                            alert("Authorization failed: " + flow.error);
+                        }
+                    });
+                }
+            }
+        });
+    });
 
     settingsForm.addEventListener("submit", () => {
         if (!window.pywebview || !window.pywebview.api) return;
@@ -367,14 +489,17 @@ document.addEventListener("DOMContentLoaded", () => {
             POLL_INTERVAL: parseInt(document.getElementById("POLL_INTERVAL").value),
             IMPORTANCE_THRESHOLD: parseInt(document.getElementById("IMPORTANCE_THRESHOLD").value),
             WHITELIST_SENDERS: document.getElementById("WHITELIST_SENDERS").value,
-            BLACKLIST_SENDERS: document.getElementById("BLACKLIST_SENDERS").value
+            BLACKLIST_SENDERS: document.getElementById("BLACKLIST_SENDERS").value,
+            // Include Google details in payload
+            google_client_id: document.getElementById("google_client_id").value,
+            google_client_secret: document.getElementById("google_client_secret").value
         };
 
         window.pywebview.api.save_settings(JSON.stringify(config)).then(response => {
             const res = JSON.parse(response);
             saveSettingsBtn.innerText = "Save Configurations";
             saveSettingsBtn.disabled = false;
-            
+
             if (res.success) {
                 alert("Configurations saved and reloaded successfully!");
                 loadSettings();
@@ -420,7 +545,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
         }
-        
+
         // Inject standard headers
         headers["from"] = sender;
         headers["subject"] = subject;
@@ -431,7 +556,7 @@ document.addEventListener("DOMContentLoaded", () => {
         window.pywebview.api.test_classifier(JSON.stringify(headers), body).then(response => {
             runSandboxBtn.innerText = "Run Sandbox Evaluation";
             runSandboxBtn.disabled = false;
-            
+
             const res = JSON.parse(response);
             if (res.success) {
                 renderSandboxResult(res.data);
@@ -444,10 +569,10 @@ document.addEventListener("DOMContentLoaded", () => {
     function renderSandboxResult(result) {
         const ratingClass = result.is_important ? "score-high" : "score-low";
         const ratingTag = result.is_important ? "IMPORTANT" : "BULK / CLUTTER";
-        
+
         // Parse matches
         const reasons = result.classification_reason ? result.classification_reason.split("; ") : [];
-        
+
         let reasonsHtml = reasons.map(r => {
             // Add custom visual weight markers
             let pointSpan = "";
@@ -458,7 +583,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 const pts = r.match(/\(-(\d+)\)/);
                 if (pts) pointSpan = `<span class="reason-pts-neg">-${pts[1]} Pts</span>`;
             }
-            
+
             return `
                 <div class="sandbox-reason-item">
                     <span>${escapeHtml(r)}</span>
@@ -500,7 +625,7 @@ document.addEventListener("DOMContentLoaded", () => {
     clearDbBtn.addEventListener("click", () => {
         if (confirm("WARNING: This will delete all indexed emails and system log history from SQLite permanently! Are you absolutely sure?")) {
             if (!window.pywebview || !window.pywebview.api) return;
-            
+
             window.pywebview.api.clear_database().then(response => {
                 const res = JSON.parse(response);
                 if (res.success) {
@@ -550,7 +675,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const row = document.createElement("div");
             row.className = "log-row";
-            
+
             const tagClass = `tag-${log.level.toLowerCase()}`;
             const levelTag = `[${log.level.toUpperCase()}]`;
 
@@ -559,12 +684,195 @@ document.addEventListener("DOMContentLoaded", () => {
                 <span class="log-tag ${tagClass}">${levelTag}</span>
                 <span class="log-msg">${escapeHtml(log.message)}</span>
             `;
-            
+
             consoleLogsList.appendChild(row);
         });
 
         // Restore scroll position
         consoleLogsList.scrollTop = scrollTop;
+    }
+
+    // ==========================================================================
+    // Login Wall Overlay Controls
+    // ==========================================================================
+    const loginTabGoogleBtn = document.getElementById("login-tab-google-btn");
+    const loginTabPasswdBtn = document.getElementById("login-tab-passwd-btn");
+    const loginModeGoogle = document.getElementById("login-mode-google");
+    const loginModePasswd = document.getElementById("login-mode-passwd");
+    
+    const wallOauthConnectBtn = document.getElementById("wall-oauth-connect-btn");
+    const wallPasswdConnectBtn = document.getElementById("wall-passwd-connect-btn");
+    const viewGuideLink = document.getElementById("view-guide-link");
+
+    // Login Card Tab switches
+    if (loginTabGoogleBtn && loginTabPasswdBtn) {
+        loginTabGoogleBtn.addEventListener("click", () => {
+            loginTabGoogleBtn.classList.add("active");
+            loginTabPasswdBtn.classList.remove("active");
+            loginModeGoogle.classList.add("active");
+            loginModePasswd.classList.remove("active");
+        });
+
+        loginTabPasswdBtn.addEventListener("click", () => {
+            loginTabPasswdBtn.classList.add("active");
+            loginTabGoogleBtn.classList.remove("active");
+            loginModePasswd.classList.add("active");
+            loginModeGoogle.classList.remove("active");
+        });
+    }
+
+    // Google Sign-In on Login Wall
+    if (wallOauthConnectBtn) {
+        wallOauthConnectBtn.addEventListener("click", () => {
+            if (!window.pywebview || !window.pywebview.api) return;
+
+            const oauthEmail = document.getElementById("wall-imap-user").value.trim();
+            const clientID = document.getElementById("wall-client-id").value.trim();
+            const clientSecret = document.getElementById("wall-client-secret").value.trim();
+
+            if (!oauthEmail || !clientID || !clientSecret) {
+                alert("Please fill in your Email, Client ID, and Client Secret to sign in.");
+                return;
+            }
+
+            wallOauthConnectBtn.innerText = "Signing In...";
+            wallOauthConnectBtn.disabled = true;
+
+            // 1. Save settings to SQLite first so OAuth knows which IDs and user to use
+            const config = {
+                IMAP_HOST: "imap.gmail.com",
+                IMAP_PORT: 993,
+                IMAP_SSL: true,
+                IMAP_USER: oauthEmail,
+                IMAP_PASSWORD: "",  // Not using App Password
+                MONITOR_FOLDER: "INBOX",
+                POLL_INTERVAL: 300,
+                IMPORTANCE_THRESHOLD: 50,
+                WHITELIST_SENDERS: "",
+                BLACKLIST_SENDERS: "glassdoor,indeed,aliexpress,newsletter,noreply@,no-reply@",
+                google_client_id: clientID,
+                google_client_secret: clientSecret
+            };
+
+            window.pywebview.api.save_settings(JSON.stringify(config)).then(saveRes => {
+                const saveObj = JSON.parse(saveRes);
+                if (saveObj.success) {
+                    // 2. Start OAuth flow
+                    window.pywebview.api.start_oauth_flow().then(flowRes => {
+                        const flow = JSON.parse(flowRes);
+                        if (flow.success) {
+                            alert("Opening Google Login screen in your browser. Please authorize access, then return here.");
+                            
+                            let pollCounter = 0;
+                            let wallInterval = setInterval(() => {
+                                pollCounter++;
+                                window.pywebview.api.get_oauth_status().then(statusRes => {
+                                    const statusObj = JSON.parse(statusRes);
+                                    if (statusObj.success && statusObj.data.authorized && statusObj.data.enabled) {
+                                        clearInterval(wallInterval);
+                                        wallOauthConnectBtn.innerText = "Sign In with Google";
+                                        wallOauthConnectBtn.disabled = false;
+                                        
+                                        // Hide Overlay & Refresh
+                                        document.getElementById("login-wall-overlay").classList.add("hidden");
+                                        loadSettings();
+                                        loadEmails();
+                                        loadLogs();
+                                        alert("Successfully authorized and signed in with Google!");
+                                    }
+                                });
+
+                                if (pollCounter >= 40) {
+                                    clearInterval(wallInterval);
+                                    wallOauthConnectBtn.innerText = "Sign In with Google";
+                                    wallOauthConnectBtn.disabled = false;
+                                    alert("Google sign-in timed out. Please try again.");
+                                }
+                            }, 1500);
+                        } else {
+                            wallOauthConnectBtn.innerText = "Sign In with Google";
+                            wallOauthConnectBtn.disabled = false;
+                            alert("Authorization failed: " + flow.error);
+                        }
+                    });
+                } else {
+                    wallOauthConnectBtn.innerText = "Sign In with Google";
+                    wallOauthConnectBtn.disabled = false;
+                    alert("Failed to save credentials: " + saveObj.error);
+                }
+            });
+        });
+    }
+
+    // App Password Sign-In on Login Wall
+    if (wallPasswdConnectBtn) {
+        wallPasswdConnectBtn.addEventListener("click", () => {
+            if (!window.pywebview || !window.pywebview.api) return;
+
+            const host = document.getElementById("wall-passwd-host").value.trim();
+            const port = parseInt(document.getElementById("wall-passwd-port").value) || 993;
+            const ssl = document.getElementById("wall-passwd-ssl").checked;
+            const email = document.getElementById("wall-passwd-user").value.trim();
+            const password = document.getElementById("wall-passwd-code").value.trim();
+
+            if (!email || !password || !host) {
+                alert("Please fill in the Host, Email, and App Password fields.");
+                return;
+            }
+
+            wallPasswdConnectBtn.innerText = "Connecting...";
+            wallPasswdConnectBtn.disabled = true;
+
+            const config = {
+                IMAP_HOST: host,
+                IMAP_PORT: port,
+                IMAP_SSL: ssl,
+                IMAP_USER: email,
+                IMAP_PASSWORD: password,
+                MONITOR_FOLDER: "INBOX",
+                POLL_INTERVAL: 300,
+                IMPORTANCE_THRESHOLD: 50,
+                WHITELIST_SENDERS: "",
+                BLACKLIST_SENDERS: "glassdoor,indeed,aliexpress,newsletter,noreply@,no-reply@",
+                google_client_id: "",
+                google_client_secret: ""
+            };
+
+            window.pywebview.api.save_settings(JSON.stringify(config)).then(saveRes => {
+                const saveObj = JSON.parse(saveRes);
+                if (saveObj.success) {
+                    // Trigger manual sync
+                    window.pywebview.api.trigger_manual_sync().then(() => {
+                        wallPasswdConnectBtn.innerText = "Connect & Sign In";
+                        wallPasswdConnectBtn.disabled = false;
+                        
+                        // Hide login wall and reload
+                        document.getElementById("login-wall-overlay").classList.add("hidden");
+                        loadSettings();
+                        loadEmails();
+                        loadLogs();
+                        alert("IMAP Connection established and signed in successfully!");
+                    });
+                } else {
+                    wallPasswdConnectBtn.innerText = "Connect & Sign In";
+                    wallPasswdConnectBtn.disabled = false;
+                    alert("Failed to save IMAP credentials: " + saveObj.error);
+                }
+            });
+        });
+    }
+
+    // Onboarding setup guide instructions link
+    if (viewGuideLink) {
+        viewGuideLink.addEventListener("click", (e) => {
+            e.preventDefault();
+            alert("Google Cloud OAuth Setup Guide:\n" +
+                  "1. Create a free project on console.cloud.google.com\n" +
+                  "2. Go to APIs & Services > Credentials\n" +
+                  "3. Configure Consent Screen: set to External and add your email to Test Users\n" +
+                  "4. Create OAuth Web Application Credentials redirecting to http://localhost:8080/\n" +
+                  "5. Copy Client ID and Secret, paste them into the Google fields, and Sign In!");
+        });
     }
 
     // ==========================================================================
