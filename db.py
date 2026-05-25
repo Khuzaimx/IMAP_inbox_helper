@@ -3,7 +3,10 @@ import os
 import json
 from datetime import datetime
 
-DB_PATH = "inbox_helper.db"
+# Path database safely inside the writeable user AppData directory (resolves Program Files write permission errors)
+APP_DATA_DIR = os.path.join(os.environ.get("LOCALAPPDATA", os.path.expanduser("~")), "InboxHelper")
+os.makedirs(APP_DATA_DIR, exist_ok=True)
+DB_PATH = os.path.join(APP_DATA_DIR, "inbox_helper.db")
 
 def get_connection():
     """Returns a thread-safe connection to the SQLite database with row factory enabled."""
