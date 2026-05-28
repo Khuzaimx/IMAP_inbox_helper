@@ -59,6 +59,8 @@ document.addEventListener("DOMContentLoaded", () => {
             // Perform context-specific updates upon loading a tab
             if (targetTab === "dashboard-tab") {
                 loadEmails(onlyImportantFilter);
+            } else if (targetTab === "digest-tab") {
+                loadDigest();
             } else if (targetTab === "rules-tab") {
                 loadSettings();
             } else if (targetTab === "logs-tab") {
@@ -967,6 +969,139 @@ document.addEventListener("DOMContentLoaded", () => {
                 "3. Configure Consent Screen: set to External and add your email to Test Users\n" +
                 "4. Create OAuth Web Application Credentials redirecting to http://localhost:8080/\n" +
                 "5. Copy Client ID and Secret, paste them into the Google fields, and Sign In!");
+        });
+    }
+
+    // ==========================================================================
+    // Daily TL;DR Inbox Briefing & Digest Engine Tab
+    // ==========================================================================
+    function loadDigest() {
+        if (!window.pywebview || !window.pywebview.api) return;
+
+        window.pywebview.api.get_latest_digest().then(res => {
+            const resObj = JSON.parse(res);
+            if (resObj.success && resObj.data) {
+                renderDigest(resObj.data);
+            } else {
+                renderEmptyDigest();
+            }
+        });
+    }
+
+    function renderDigest(digest) {
+        const summariesContainer = document.getElementById("digest-summaries-list");
+        const actionsContainer = document.getElementById("digest-actions-list");
+        
+        const summaries = JSON.parse(digest.summary_content || "[]");
+        const actions = JSON.parse(digest.action_items || "[]");
+        const dateStr = digest.digest_date;
+
+        // Formats YYYY-MM-DD to beautiful readable date
+        const formattedDate = new Date(dateStr + "T00:00:00").toLocaleDateString("en-US", {
+            weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+        });
+
+        const tabHeader = document.querySelector("#digest-tab h2");
+        if (tabHeader) {
+            tabHeader.innerText = `Daily Briefing: ${formattedDate}`;
+        }
+
+        // Render Summaries
+        if (summaries.length === 0) {
+            summariesContainer.innerHTML = `
+                <div class="empty-state">
+                    <p>No high-priority emails were synchronized for this date.</p>
+                </div>`;
+        } else {
+            summariesContainer.innerHTML = summaries.map(sum => `
+                <div class="email-card" style="cursor: default; padding: 14px; background-color: rgba(255, 255, 255, 0.015); border: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 6px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+                        <span style="font-size: 11px; font-weight: 700; color: var(--text-primary);">${escapeHtml(sum.sender)}</span>
+                    </div>
+                    <div style="font-size: 12px; font-weight: 600; color: var(--text-secondary); padding-bottom: 6px; border-bottom: 1px dashed rgba(255,255,255,0.03); margin-bottom: 2px;">
+                        Subject: ${escapeHtml(sum.subject)}
+                    </div>
+                    <p style="font-size: 11px; color: var(--text-prose); line-height: 1.5; margin-bottom: 0; text-align: left;">
+                        ${escapeHtml(sum.summary)}
+                    </p>
+                </div>
+            `).join("");
+        }
+
+        // Render Actions
+        if (actions.length === 0) {
+            actionsContainer.innerHTML = `
+                <div class="empty-state">
+                    <p>No actionable items were detected in your important emails.</p>
+                </div>`;
+        } else {
+            actionsContainer.innerHTML = actions.map((act, index) => `
+                <div style="display: flex; align-items: flex-start; gap: 10px; padding: 10px; background: rgba(255,255,255,0.01); border: 1px solid var(--border-color); border-radius: var(--radius-sm); transition: var(--transition-fast);">
+                    <input type="checkbox" class="digest-task-checkbox" data-date="${dateStr}" data-task="${escapeHtml(act.task)}" ${act.completed ? "checked" : ""} style="width: 14px; height: 14px; accent-color: var(--accent-indigo); cursor: pointer; margin-top: 2px;">
+                    <div style="display: flex; flex-direction: column; gap: 3px;">
+                        <span style="font-size: 11px; font-weight: 500; color: ${act.completed ? "var(--text-muted)" : "var(--text-primary)"}; text-decoration: ${act.completed ? "line-through" : "none"}; line-height: 1.4; text-align: left;">
+                            ${escapeHtml(act.task)}
+                        </span>
+                        <small style="font-size: 9px; color: var(--text-muted); text-align: left;">
+                            Context: ${escapeHtml(act.context_subject)}
+                        </small>
+                    </div>
+                </div>
+            `).join("");
+
+            // Add Checkbox Toggle Listeners
+            const checkboxes = actionsContainer.querySelectorAll(".digest-task-checkbox");
+            checkboxes.forEach(cb => {
+                cb.addEventListener("change", () => {
+                    const taskDate = cb.getAttribute("data-date");
+                    const taskText = cb.getAttribute("data-task");
+                    const isCompleted = cb.checked;
+                    
+                    window.pywebview.api.toggle_digest_task(taskDate, taskText, isCompleted).then(res => {
+                        const toggleRes = JSON.parse(res);
+                        if (toggleRes.success) {
+                            // Reload the digest to update visual styles (line-through) smoothly
+                            loadDigest();
+                        } else {
+                            alert("Failed to update task state: " + toggleRes.error);
+                        }
+                    });
+                });
+            });
+        }
+    }
+
+    function renderEmptyDigest() {
+        document.getElementById("digest-summaries-list").innerHTML = `
+            <div class="empty-state">
+                <p>No summaries generated for today yet. Click <strong>Compile Daily Brief</strong> to run the local NLP summarizer.</p>
+            </div>`;
+        document.getElementById("digest-actions-list").innerHTML = `
+            <div class="empty-state">
+                <p>Your pending task queue is empty. Tasks will be extracted from your important emails when you compile your brief.</p>
+            </div>`;
+    }
+
+    const generateDigestBtn = document.getElementById("generate-digest-btn");
+    if (generateDigestBtn) {
+        generateDigestBtn.addEventListener("click", () => {
+            if (!window.pywebview || !window.pywebview.api) return;
+
+            generateDigestBtn.innerText = "Compiling Summaries...";
+            generateDigestBtn.disabled = true;
+
+            window.pywebview.api.generate_fresh_digest().then(res => {
+                const resObj = JSON.parse(res);
+                generateDigestBtn.innerText = "Compile Daily Brief";
+                generateDigestBtn.disabled = false;
+                
+                if (resObj.success && resObj.data) {
+                    renderDigest(resObj.data);
+                    alert("Daily Briefing compiled successfully!");
+                } else {
+                    alert("Failed to compile briefing: " + resObj.error);
+                }
+            });
         });
     }
 

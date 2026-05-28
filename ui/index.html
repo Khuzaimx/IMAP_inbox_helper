@@ -250,6 +250,9 @@
                 <button class="nav-btn active" data-tab="dashboard-tab">
                     Dashboard
                 </button>
+                <button class="nav-btn" data-tab="digest-tab">
+                    Inbox Digest
+                </button>
                 <button class="nav-btn" data-tab="rules-tab">
                     Rules & Configs
                 </button>
@@ -327,6 +330,45 @@
                     <div class="detail-container glass" id="email-detail-pane">
                         <div class="empty-state">
                             <p>Select an email from the left feed to view classification analytics and content snippet.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 1.5: INBOX DAILY DIGEST -->
+            <section class="tab-content" id="digest-tab">
+                <header class="tab-header">
+                    <div>
+                        <h2>Daily TL;DR Inbox Briefing</h2>
+                        <p>Your local offline extractive summaries and action lists compiled from the last 24 hours</p>
+                    </div>
+                    <button class="sync-btn" id="generate-digest-btn" style="background-color: var(--accent-indigo); color: white;">
+                        Compile Daily Brief
+                    </button>
+                </header>
+
+                <div class="dashboard-split" style="gap: 20px;">
+                    <!-- Column A: Daily Email Summaries -->
+                    <div class="feed-container glass" style="flex-grow: 2; width: 60%; padding: 16px; overflow-y: auto; height: calc(100vh - 160px);">
+                        <h3 style="font-size: 13px; font-weight: 700; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; margin-bottom: 12px; color: var(--text-primary);">
+                            📬 High-Priority TL;DR Summaries
+                        </h3>
+                        <div id="digest-summaries-list" style="display: flex; flex-direction: column; gap: 12px;">
+                            <div class="empty-state">
+                                <p>No summaries generated for today yet. Click <strong>Compile Daily Brief</strong> to run the local NLP summarizer.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Column B: Action Item Checklist -->
+                    <div class="feed-container glass" style="flex-grow: 1.2; width: 40%; padding: 16px; overflow-y: auto; height: calc(100vh - 160px);">
+                        <h3 style="font-size: 13px; font-weight: 700; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; margin-bottom: 12px; color: var(--text-primary);">
+                            ✔️ Inbox Action Triage Checklist
+                        </h3>
+                        <div id="digest-actions-list" style="display: flex; flex-direction: column; gap: 8px;">
+                            <div class="empty-state">
+                                <p>Your pending task queue is empty. Tasks will be extracted from your important emails when you compile your brief.</p>
+                            </div>
                         </div>
                     </div>
                 </div>

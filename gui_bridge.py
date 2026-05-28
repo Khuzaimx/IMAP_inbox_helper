@@ -197,3 +197,56 @@ class GUIBridge:
             return json.dumps({"success": True})
         except Exception as e:
             return json.dumps({"success": False, "error": str(e)})
+
+    def get_latest_digest(self) -> str:
+        """Retrieves the latest compiled daily TL;DR briefing as a JSON string."""
+        try:
+            digest = db.get_latest_digest()
+            if digest:
+                return json.dumps({"success": True, "data": digest})
+            else:
+                return json.dumps({"success": True, "data": None})
+        except Exception as e:
+            return json.dumps({"success": False, "error": str(e)})
+
+    def generate_fresh_digest(self) -> str:
+        """Runs the offline summarization heuristics over emails from the last 24 hours."""
+        try:
+            db.log_event("DIGEST", "Starting manual compilation of Daily TL;DR Digest...")
+            # 1. Fetch recent important emails
+            emails = db.get_emails(limit=100, only_important=True)
+            if not emails:
+                return json.dumps({"success": False, "error": "No high-priority emails found in local database to summarize."})
+                
+            # 2. Run summarizer
+            import summarizer
+            digest_dict = summarizer.generate_daily_digest(emails)
+            
+            # 3. Save to database
+            digest_date = digest_dict["date"]
+            summary_content = json.dumps(digest_dict["summaries"])
+            action_items = json.dumps(digest_dict["action_items"])
+            
+            success = db.save_digest(digest_date, summary_content, action_items)
+            
+            if success:
+                db.log_event("SUCCESS", f"Daily TL;DR Digest compiled and saved for date: '{digest_date}'")
+                latest_digest = db.get_latest_digest()
+                return json.dumps({"success": True, "data": latest_digest})
+            else:
+                return json.dumps({"success": False, "error": "Failed to save compiled digest to database."})
+        except Exception as e:
+            db.log_event("ERROR", f"Failed to generate daily digest: {e}")
+            return json.dumps({"success": False, "error": str(e)})
+
+    def toggle_digest_task(self, date_str: str, task_text: str, is_completed: bool) -> str:
+        """Updates the completion state of a specific task inside the daily digest JSON block."""
+        try:
+            success = db.toggle_digest_action(date_str, task_text, is_completed)
+            if success:
+                return json.dumps({"success": True})
+            else:
+                return json.dumps({"success": False, "error": "Digest task not found or database update failed."})
+        except Exception as e:
+            return json.dumps({"success": False, "error": str(e)})
+

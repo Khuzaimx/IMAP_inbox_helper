@@ -64,6 +64,7 @@
                     <div class="nav-group-title">Routing & Rules</div>
                     <ul class="nav-list">
                         <li><a href="#logic" class="nav-link" data-target="logic">Scoring Logic Heuristics</a></li>
+                        <li><a href="#digest" class="nav-link" data-target="digest">Daily TL;DR Digest</a></li>
                         <li><a href="#sandbox" class="nav-link" data-target="sandbox">Interactive Sandbox</a></li>
                     </ul>
                 </div>
@@ -346,6 +347,53 @@
                 <div class="alert note">
                     <strong>Note:</strong> All scores are bounded between 0 and 100. If an email triggers multiple rules, its score accumulates. For example, a whitelisted newsletter will start with +50 points, keeping it highly visible despite having automated headers!
                 </div>
+            </section>
+
+            <!-- Daily TL;DR Digest Panel -->
+            <section id="panel-digest" class="doc-panel">
+                <h1>Daily TL;DR Digest Engine</h1>
+                <p class="lead">InboxHelper features an intelligent, 100% offline Natural Language Processing (NLP) engine that parses your important emails to generate daily summaries and checkable action items.</p>
+                
+                <p>Because InboxHelper is designed to run purely locally on your device, this engine uses a custom, highly-optimized extractive summarization algorithm built entirely using standard Python libraries. This ensures that no data leaves your machine, no external API keys are required, and the system runs in milliseconds.</p>
+
+                <h2>How local extractive summarization works</h2>
+                <div class="step-card">
+                    <div class="step-number">1</div>
+                    <div class="step-details">
+                        <h3>Sentence Splitting & Stopwords Filtering</h3>
+                        <p>The email body is split into clean sentences using regex patterns. The engine tokenizes all words, removes standard English "stopwords" (like <em>the, is, but, then</em>) which carry little semantic value, and normalizes whitespaces.</p>
+                    </div>
+                </div>
+
+                <div class="step-card">
+                    <div class="step-number">2</div>
+                    <div class="step-details">
+                        <h3>Word Frequency & Sentence Weighting</h3>
+                        <p>The engine builds a dynamic local word-frequency dictionary from the remaining terms. Every sentence is then scored by summing the frequencies of its words. Crucially, the score is normalized by the logarithm of the sentence length to prevent long sentences from dominating, and penalty multipliers are applied if typical clutter terms (e.g. <em>unsubscribe, opt out</em>) are detected.</p>
+                    </div>
+                </div>
+
+                <div class="step-card">
+                    <div class="step-number">3</div>
+                    <div class="step-details">
+                        <h3>Chronological Selection</h3>
+                        <p>The top 2 or 3 sentences with the highest normalized scores are selected. The engine then sorts them back into their original chronological order, ensuring the summary reads logically and maintains the author's conversational flow.</p>
+                    </div>
+                </div>
+
+                <h2>Heuristic Action-Item Parser</h2>
+                <p>Every sentence is also parsed by a rule-based intent engine to detect actionable items. If a sentence matches specific task patterns (such as <code>please confirm</code>, <code>urgent follow up</code>, <code>deadline is</code>, <code>send me the</code>), it is automatically extracted as a checkable task and added to your interactive briefing checklist.</p>
+                <p>Checked tasks are synchronized directly to your local database so your daily triage progress is fully preserved.</p>
+
+                <h2>SQLite Database Schema</h2>
+                <div class="code-block-header">Digests Table Schema</div>
+                <pre><code>CREATE TABLE IF NOT EXISTS digests (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    digest_date TEXT UNIQUE,      -- Format: YYYY-MM-DD
+    summary_content TEXT,        -- Stored JSON payload of email summaries
+    action_items TEXT,           -- Stored JSON list of action tasks
+    created_at TEXT
+);</code></pre>
             </section>
 
             <!-- Interactive Sandbox Panel -->

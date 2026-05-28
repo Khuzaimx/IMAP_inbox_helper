@@ -54,6 +54,17 @@ def init_db():
         )
     """)
     
+    # Inbox TL;DR Digests Table
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS digests (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            digest_date TEXT UNIQUE,
+            summary_content TEXT,
+            action_items TEXT,
+            created_at TEXT
+        )
+    """)
+    
     conn.commit()
     conn.close()
 
@@ -225,6 +236,91 @@ def has_matching_thread(core_subject: str) -> bool:
     finally:
         conn.close()
 
+def save_digest(digest_date: str, summary_content: str, action_items: str) -> bool:
+    """Saves or updates a daily digest JSON payload in the SQLite digests table."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    created_at = datetime.now().isoformat()
+    try:
+        cursor.execute(
+            """
+            INSERT OR REPLACE INTO digests (digest_date, summary_content, action_items, created_at)
+            VALUES (?, ?, ?, ?)
+            """,
+            (digest_date, summary_content, action_items, created_at)
+        )
+        conn.commit()
+        return True
+    except Exception as e:
+        log_event("ERROR", f"Failed to save digest for date '{digest_date}': {e}")
+        return False
+    finally:
+        conn.close()
+
+def get_latest_digest():
+    """Retrieves the most recently generated daily digest row from SQLite."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            "SELECT * FROM digests ORDER BY digest_date DESC LIMIT 1"
+        )
+        row = cursor.fetchone()
+        return dict(row) if row else None
+    except Exception as e:
+        log_event("ERROR", f"Failed to fetch latest digest: {e}")
+        return None
+    finally:
+        conn.close()
+
+def get_digest_by_date(date_str: str):
+    """Retrieves a specific daily digest row from SQLite based on date string (YYYY-MM-DD)."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            "SELECT * FROM digests WHERE digest_date = ?",
+            (date_str,)
+        )
+        row = cursor.fetchone()
+        return dict(row) if row else None
+    except Exception as e:
+        log_event("ERROR", f"Failed to fetch digest for date '{date_str}': {e}")
+        return None
+    finally:
+        conn.close()
+
+def toggle_digest_action(date_str: str, task_text: str, is_completed: bool) -> bool:
+    """Updates the completion state of a specific task inside the daily digest JSON block."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        # 1. Fetch current digest
+        cursor.execute("SELECT action_items FROM digests WHERE digest_date = ?", (date_str,))
+        row = cursor.fetchone()
+        if not row:
+            return False
+            
+        action_items = json.loads(row["action_items"])
+        # 2. Find and update the task
+        for item in action_items:
+            if item["task"] == task_text:
+                item["completed"] = is_completed
+                break
+                
+        # 3. Save back to SQLite
+        cursor.execute(
+            "UPDATE digests SET action_items = ? WHERE digest_date = ?",
+            (json.dumps(action_items), date_str)
+        )
+        conn.commit()
+        return True
+    except Exception as e:
+        log_event("ERROR", f"Failed to toggle action item in digest: {e}")
+        return False
+    finally:
+        conn.close()
+
 def clear_all_data():
     """Wipes the database tables clean."""
     conn = get_connection()
@@ -232,6 +328,7 @@ def clear_all_data():
     try:
         cursor.execute("DELETE FROM emails")
         cursor.execute("DELETE FROM logs")
+        cursor.execute("DELETE FROM digests")
         conn.commit()
         log_event("INFO", "Local database tables wiped clean successfully.")
     except Exception as e:
